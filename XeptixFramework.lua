@@ -45,11 +45,17 @@ RbxUtility = LoadLibrary("RbxUtility")
 ModifiedObjects = {
 	["root"] = {
 		IsA = function(self, ClassName)
-			if ClassName == "XeptixFrameworkService" then
-				return self.XeptixFrameworkService
+			game.FrameworkService:CheckArgument("IsA", 1, ClassName, "string")
+			
+			if ClassName == "XeptixFrameworkService" and self:HasProperty("XeptixFrameworkService") then
+				return true
 			elseif ClassName == "XeptixObject" then
 				return true
 			elseif rawget(self, "ClassName") == ClassName then
+				return true
+			elseif rawget(self, "SuperClassName") == ClassName then
+				return true
+			elseif ClassName == "root" then
 				return true
 			else
 				return rawget(self, "____o"):IsA(ClassName)
@@ -90,21 +96,43 @@ ModifiedObjects = {
 			game.FrameworkService:CheckArgument("FindFirstChildOfClass", 3, Recursive, {"boolean", "nil"})
 			
 			if Recursive then
+				local Obj
 				Object:Recursive(function(v)
 					if v:CanReadProperty(Name) and v[Name] == Value then
+						Obj = v
 						return
 					end
 				end)
+				
+				return Obj
 			else
 				for _,v in pairs(self:GetChildren()) do
-					
+					if v:CanReadProperty(Name) and v[Name] == Value then
+						return v
+					end
 				end
 			end
 		end,
 		findFirstChildWithProperty = function(self, ...)
 			return rawget(self, "FindFirstChildWithProperty")(self, ...)
 		end,
-		WaitForChild = function(self, Name, Timeout)
+		WaitForChild = function(self, Name, Timeout, Recursive)
+			game.FrameworkService:CheckArgument("WaitForChild", 1, Name, "string")
+			game.FrameworkService:CheckArgument("WaitForChild", 2, Timeout, {"number", "nil"})
+			game.FrameworkService:CheckArgument("WaitForChild", 3, Recursive, {"boolean", "nil"})
+			
+			if Recursive then
+				local Obj
+				local Stop = os.time() + (Timeout or 999999)
+				while not Obj and Stop >= os.time() do
+					Obj = self:FindFirstChild(Name, true)
+					
+					if not Obj then wait() end
+				end
+				
+				return Obj
+			end
+			
 			local O = rawget(self, "____o"):WaitForChild(Name, Timeout)
 			if O then
 				O = Object(O)
@@ -114,6 +142,42 @@ ModifiedObjects = {
 		end,
 		waitForChild = function(self, ...)
 			return rawget(self, "WaitForChild")(self, ...)
+		end,
+		WaitForChildOfClass = function(self, Name, Timeout, Recursive)
+			game.FrameworkService:CheckArgument("WaitForChildOfClass", 1, Name, "string")
+			game.FrameworkService:CheckArgument("WaitForChildOfClass", 2, Timeout, {"number", "nil"})
+			game.FrameworkService:CheckArgument("WaitForChildOfClass", 3, Recursive, {"boolean", "nil"})
+			
+			local Obj
+			local Stop = os.time() + (Timeout or 999999)
+			while not Obj and Stop >= os.time() do
+				Obj = self:FindFirstChildOfClass(Name, Recursive)
+				
+				if not Obj then wait() end
+			end
+				
+			return Obj
+		end,
+		waitForChildOfClass = function(self, ...)
+			return rawget(self, "WaitForChildOfClass")(self, ...)
+		end,
+		WaitForChildWithProperty = function(self, Name, Value, Timeout, Recursive)
+			game.FrameworkService:CheckArgument("WaitForChildWithProperty", 1, Name, "string")
+			game.FrameworkService:CheckArgument("WaitForChildWithProperty", 3, Timeout, {"number", "nil"})
+			game.FrameworkService:CheckArgument("WaitForChildWithProperty", 4, Recursive, {"boolean", "nil"})
+			
+			local Obj
+			local Stop = os.time() + (Timeout or 999999)
+			while not Obj and Stop >= os.time() do
+				Obj = self:FindFirstChildWithProperty(Name, Value, Recursive)
+				
+				if not Obj then wait() end
+			end
+				
+			return Obj
+		end,
+		waitForChildWithProperty = function(self, ...)
+			return rawget(self, "WaitForChildWithProperty")(self, ...)
 		end,
 		Recursive = function(self, callback)
 			game.FrameworkService:CheckArgument("Recursive", 1, callback, "function")
