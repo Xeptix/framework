@@ -1,5 +1,5 @@
 -- Xeptix Framework 3.0.0a
--- Documentation: https://github.com/xeptix/framework/wiki
+-- Documentation: https://github.com/Xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
 -- your own custom properties, methods, and events for all objects. These work cross-script, but server/client do not share these
@@ -19,7 +19,7 @@
 
 
 
--- Check out our github to view documentation, add to the framework, or fix bugs yourself! https://github.com/xeptix/framework
+-- Check out our github to view documentation, add to the framework, or fix bugs yourself! https://github.com/Xeptix/framework
 -- Always be sure to read documentation if it is your first time using a feature - all information you need is displayed there!
 
 
