@@ -1,5 +1,5 @@
 -- Xeptix Framework 3.0.0a
--- Documentation: https://github.com/Xeptix/framework/wiki
+-- Documentation: https://github.com/xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
 -- your own custom properties, methods, and events for all objects. These work cross-script, but server/client do not share these
@@ -19,7 +19,7 @@
 
 
 
--- Check out our github to view documentation, add to the framework, or fix bugs yourself! https://github.com/Xeptix/framework
+-- Check out our github to view documentation, add to the framework, or fix bugs yourself! https://github.com/xeptix/framework
 -- Always be sure to read documentation if it is your first time using a feature - all information you need is displayed there!
 
 
@@ -115,8 +115,29 @@ ModifiedObjects = {
 		waitForChild = function(self, ...)
 			return rawget(self, "WaitForChild")(self, ...)
 		end,
-		
+		Recursive = function(self, callback)
+			game.FrameworkService:CheckArgument("Recursive", 1, callback, "function")
+			
+			local function search(parent)
+				local nextLoop = {}
+				for _,v in pairs(parent:GetChildren()) do
+					if #v:GetChildren() > 0 then
+						table.insert(nextLoop, v)
+					end
+					
+					callback(v)
+				end
+				
+				for _,v in pairs(nextLoop) do
+					search(v)
+				end
+			end
+			
+			search(self)
+		end,
 		CanReadProperty = function(self, name)
+			game.FrameworkService:CheckArgument("CanReadProperty", 1, name, "string")
+			
 			if rawget(self, "____l")[name .. "____l1"] or rawget(self, "____l")[name .. "____l3"] then
 				return false
 			end
@@ -130,6 +151,8 @@ ModifiedObjects = {
 			return can
 		end,
 		CanModifyProperty = function(self, name)
+			game.FrameworkService:CheckArgument("CanModifyProperty", 1, name, "string")
+			
 			local can = true
 			if rawget(self, "____l")[name .. "____l2"] or rawget(self, "____l")[name .. "____l3"] then
 				can = false
