@@ -98,7 +98,7 @@ ModifiedObjects = {
 			if Recursive then
 				local Obj
 				Object:Recursive(function(v)
-					if v:CanReadProperty(Name) and v[Name] == Value then
+					if v:CanReadProperty(Name) and (Value == nil or v[Name] == Value) then
 						Obj = v
 						return
 					end
@@ -107,7 +107,7 @@ ModifiedObjects = {
 				return Obj
 			else
 				for _,v in pairs(self:GetChildren()) do
-					if v:CanReadProperty(Name) and v[Name] == Value then
+					if v:CanReadProperty(Name) and (Value == nil or v[Name] == Value) then
 						return v
 					end
 				end
@@ -232,12 +232,20 @@ ModifiedObjects = {
 		HasMethod = function(self, name)
 			game.FrameworkService:CheckArgument("HasMethod", 1, name, "string")
 			
-			return (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() local x = rawget(self, "____o")[name] end)) and true or false
+			local x
+			local y = (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() x = rawget(self, "____o")[name] end)) and true or false
+			if x or y then
+				return typeof(x) == "function" or typeof(y) == "function"
+			end
 		end,
 		HasEvent = function(self, name)
 			game.FrameworkService:CheckArgument("HasEvent", 1, name, "string")
 			
-			return (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() local x = rawget(self, "____o")[name] end)) and true or false
+			local x
+			local y = (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() x = rawget(self, "____o")[name] end)) and true or false
+			if x or y then
+				return typeof(x) == "RBXScriptSignal" or typeof(y) == "RBXScriptSignal"
+			end
 		end,
 		SetProperty = function(self, property, value)
 			if superLockedProperties[property] then
@@ -258,6 +266,8 @@ ModifiedObjects = {
 			return rawset(self, property, value)
 		end,
 		SetMethod = function(self, name, func)
+			game.FrameworkService:CheckArgument("SetMethod", 2, func, "function")
+			
 			if superLockedProperties[name] then
 				local fn = self:GetFullName()
 				error("Method '" .. name .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
