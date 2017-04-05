@@ -1,4 +1,4 @@
--- An example of a service!
+-- An example of a service! 
 
 return {"FrameworkInternalService", "FrameworkInternalService", {
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l)
