@@ -308,6 +308,7 @@ ModifiedObjects = {
 				local fn = self:GetFullName()
 				error(LType[lockMode] .. " property '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is already locked!", 0)
 			end
+			
 			local x;pcall(function()x=rawget(self, "____o")[name]end);
 			rawget(self, "____l")[name .. "____l" .. lockMode] = rawget(self, "____l")[name .. "____l" .. lockMode] or rawget(self, name) or x
 			rawset(self, name, nil)
