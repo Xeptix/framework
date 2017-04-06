@@ -29,7 +29,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 	QueryString = function(self, items)
 		game.FrameworkService:CheckArgument("QueryString", 1, items, "table")
 		
-		return "?" .. table.format(items, "%i=%v", "&")
+		return "?" .. table.format(items, "%i=%v", "&")--todo: somehow encode these values lol
 	end,
 	AppendQueryString = function(self, url, query)
 		game.FrameworkService:CheckArgument("AppendQueryString", 1, url, "string")
@@ -43,6 +43,14 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 	end,
 	Encode = function(self, url)
 		game.FrameworkService:CheckArgument("Encode", 1, url, "string")
+		if url:sub(1,1) == "?" then
+			url = url:gsub("?", "THISISREALLYBADCODEBUTITREPLACESDAQUESTIONMARKSOOHWELL")
+			:gsub("=", "THISISREALLYBADCODEBUTITREPLACESDAEQUALSIGNSOOHWELL")
+			:gsub("&", "THISISREALLYBADCODEBUTITREPLACESDAANDSIGNSOOHWELL")
+			return self._:UrlEncode(url):gsub("THISISREALLYBADCODEBUTITREPLACESDAQUESTIONMARKSOOHWELL", "?")
+			:gsub("THISISREALLYBADCODEBUTITREPLACESDAEQUALSIGNSOOHWELL", "=")
+			:gsub("THISISREALLYBADCODEBUTITREPLACESDAANDSIGNSOOHWELL", "&")
+		end
 		return self._:UrlEncode(url)
 	end,
 	Decode = function(self, url)
