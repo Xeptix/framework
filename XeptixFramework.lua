@@ -28,8 +28,8 @@
 
 
 
+
 FrameworkModule = game.ReplicatedStorage.XeptixFramework
-_FrameworkSecurity = "asduht34uyu234gujguaw474aiowea4yerh" -- todo: make plugin randomize this each install
 Original = {["require"] = require, ["print"] = print, ["Instance"] = Instance, ["typeof"] = typeof, ["type"] = type, ["game"] = game, ["Game"] = game, ["Workspace"] = workspace, ["workspace"] = workspace, ["math"] = math, ["table"] = table, ["string"] = string}
 FrameworkServices = {}
 FrameworkJobs = {}
@@ -45,7 +45,7 @@ RbxUtility = LoadLibrary("RbxUtility")
 ModifiedObjects = {
 	["root"] = {
 		IsA = function(self, ClassName)
-			game.FrameworkService:CheckArgument("IsA", 1, ClassName, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "IsA", 1, ClassName, "string")
 			
 			if ClassName == "XeptixFrameworkService" and self:HasProperty("XeptixFrameworkService") then
 				return true
@@ -62,8 +62,8 @@ ModifiedObjects = {
 			end
 		end,
 		FindFirstChild = function(self, ClassName, Recursive)
-			game.FrameworkService:CheckArgument("FindFirstChildOfClass", 1, ClassName, "string")
-			game.FrameworkService:CheckArgument("FindFirstChildOfClass", 2, Recursive, {"boolean", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, ClassName, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 2, Recursive, {"boolean", "nil"})
 			
 			local O = rawget(self, "____o"):FindFirstChild(ClassName, Recursive)
 			if O then
@@ -76,8 +76,8 @@ ModifiedObjects = {
 			return rawget(self, "FindFirstChild")(self, ...)
 		end,
 		FindFirstChildOfClass = function(self, ClassName, Recursive)
-			game.FrameworkService:CheckArgument("FindFirstChildOfClass", 1, ClassName, "string")
-			game.FrameworkService:CheckArgument("FindFirstChildOfClass", 2, Recursive, {"boolean", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, ClassName, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 2, Recursive, {"boolean", "nil"})
 			
 			local O = rawget(self, "____o"):FindFirstChildOfClass(ClassName)
 			if O then
@@ -92,8 +92,8 @@ ModifiedObjects = {
 			return rawget(self, "FindFirstChildOfClass")(self, ...)
 		end,
 		FindFirstChildWithProperty = function(self, Name, Value, Recursive)
-			game.FrameworkService:CheckArgument("FindFirstChildOfClass", 1, Name, "string")
-			game.FrameworkService:CheckArgument("FindFirstChildOfClass", 3, Recursive, {"boolean", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, Name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 3, Recursive, {"boolean", "nil"})
 			
 			if Recursive then
 				local Obj
@@ -117,9 +117,9 @@ ModifiedObjects = {
 			return rawget(self, "FindFirstChildWithProperty")(self, ...)
 		end,
 		WaitForChild = function(self, Name, Timeout, Recursive)
-			game.FrameworkService:CheckArgument("WaitForChild", 1, Name, "string")
-			game.FrameworkService:CheckArgument("WaitForChild", 2, Timeout, {"number", "nil"})
-			game.FrameworkService:CheckArgument("WaitForChild", 3, Recursive, {"boolean", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 1, Name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 2, Timeout, {"number", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 3, Recursive, {"boolean", "nil"})
 			
 			if Recursive then
 				local Obj
@@ -144,9 +144,9 @@ ModifiedObjects = {
 			return rawget(self, "WaitForChild")(self, ...)
 		end,
 		WaitForChildOfClass = function(self, Name, Timeout, Recursive)
-			game.FrameworkService:CheckArgument("WaitForChildOfClass", 1, Name, "string")
-			game.FrameworkService:CheckArgument("WaitForChildOfClass", 2, Timeout, {"number", "nil"})
-			game.FrameworkService:CheckArgument("WaitForChildOfClass", 3, Recursive, {"boolean", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 1, Name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 2, Timeout, {"number", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 3, Recursive, {"boolean", "nil"})
 			
 			local Obj
 			local Stop = os.time() + (Timeout or 999999)
@@ -162,9 +162,9 @@ ModifiedObjects = {
 			return rawget(self, "WaitForChildOfClass")(self, ...)
 		end,
 		WaitForChildWithProperty = function(self, Name, Value, Timeout, Recursive)
-			game.FrameworkService:CheckArgument("WaitForChildWithProperty", 1, Name, "string")
-			game.FrameworkService:CheckArgument("WaitForChildWithProperty", 3, Timeout, {"number", "nil"})
-			game.FrameworkService:CheckArgument("WaitForChildWithProperty", 4, Recursive, {"boolean", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 1, Name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 3, Timeout, {"number", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 4, Recursive, {"boolean", "nil"})
 			
 			local Obj
 			local Stop = os.time() + (Timeout or 999999)
@@ -180,7 +180,7 @@ ModifiedObjects = {
 			return rawget(self, "WaitForChildWithProperty")(self, ...)
 		end,
 		Recursive = function(self, callback)
-			game.FrameworkService:CheckArgument("Recursive", 1, callback, "function")
+			game.FrameworkService:CheckArgument(debug.traceback(), "Recursive", 1, callback, "function")
 			
 			local function search(parent)
 				local nextLoop = {}
@@ -200,7 +200,7 @@ ModifiedObjects = {
 			search(self)
 		end,
 		CanReadProperty = function(self, name)
-			game.FrameworkService:CheckArgument("CanReadProperty", 1, name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "CanReadProperty", 1, name, "string")
 			
 			if rawget(self, "____l")[name .. "____l1"] or rawget(self, "____l")[name .. "____l3"] then
 				return false
@@ -215,7 +215,7 @@ ModifiedObjects = {
 			return can
 		end,
 		CanModifyProperty = function(self, name)
-			game.FrameworkService:CheckArgument("CanModifyProperty", 1, name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "CanModifyProperty", 1, name, "string")
 			
 			local can = true
 			if rawget(self, "____l")[name .. "____l2"] or rawget(self, "____l")[name .. "____l3"] then
@@ -225,12 +225,12 @@ ModifiedObjects = {
 			return can
 		end,
 		HasProperty = function(self, name)
-			game.FrameworkService:CheckArgument("HasProperty", 1, name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "HasProperty", 1, name, "string")
 			
 			return (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() local x = rawget(self, "____o")[name] end)) and true or false
 		end,
 		HasMethod = function(self, name)
-			game.FrameworkService:CheckArgument("HasMethod", 1, name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "HasMethod", 1, name, "string")
 			
 			local x
 			local y = (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() x = rawget(self, "____o")[name] end)) and true or false
@@ -239,7 +239,7 @@ ModifiedObjects = {
 			end
 		end,
 		HasEvent = function(self, name)
-			game.FrameworkService:CheckArgument("HasEvent", 1, name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "HasEvent", 1, name, "string")
 			
 			local x
 			local y = (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() x = rawget(self, "____o")[name] end)) and true or false
@@ -250,16 +250,16 @@ ModifiedObjects = {
 		SetProperty = function(self, property, value)
 			if superLockedProperties[property] then
 				local fn = self:GetFullName()
-				error("Property '" .. property .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
+				ferror(debug.traceback(), "Property '" .. property .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
 			end
 			
 			if property ~= "_isService" and not rawget(self, "_isService") and not rawget(self, "____l")["_isService____l2"] then
-				game.FrameworkService:CheckArgument("SetProperty", 1, property, "string")
+				game.FrameworkService:CheckArgument(debug.traceback(), "SetProperty", 1, property, "string")
 			end
 			
 			if rawget(self, "____l")[property .. "____l2"] or rawget(self, "____l")[property .. "____l3"] then
 				local fn = self:GetFullName()
-				error("Property '" .. property .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
+				ferror(debug.traceback(), "Property '" .. property .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
 			end
 			
 			pcall(function() if Original.typeof(value) == "table" and value.XeptixFrameworkObject then value = value.____o end rawget(self,"____o")[property] = value end)
@@ -270,12 +270,12 @@ ModifiedObjects = {
 			
 			if superLockedProperties[name] then
 				local fn = self:GetFullName()
-				error("Method '" .. name .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
+				ferror(debug.traceback(), "Method '" .. name .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
 			end
 			
 			if rawget(self, "____l")[name .. "____l2"] or rawget(self, "____l")[name .. "____l3"] then
 				local fn = self:GetFullName()
-				error("Method '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
+				ferror(debug.traceback(), "Method '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
 			end
 			
 			return rawset(self, name, function(self, ...)
@@ -285,12 +285,12 @@ ModifiedObjects = {
 		SetEvent = function(self, name)
 			if superLockedProperties[name] then
 				local fn = self:GetFullName()
-				error("Event '" .. name .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
+				ferror(debug.traceback(), "Event '" .. name .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
 			end
 			
 			if rawget(self, "____l")[name .. "____l2"] or rawget(self, "____l")[name .. "____l3"] then
 				local fn = self:GetFullName()
-				error("Event '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
+				ferror(debug.traceback(), "Event '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
 			end
 			
 			rawset(self, name, RbxUtility:CreateSignal())
@@ -298,15 +298,15 @@ ModifiedObjects = {
 		end,
 		LockProperty = function(self, name, lockMode)
 			if name ~= "_isService" and not rawget(self, "_isService") and not rawget(self, "____l")["_isService____l2"] then
-				game.FrameworkService:CheckArgument("LockProperty", 1, name, "string")
-				game.FrameworkService:CheckArgument("LockProperty", 2, lockMode, "number")
+				game.FrameworkService:CheckArgument(debug.traceback(), "LockProperty", 1, name, "string")
+				game.FrameworkService:CheckArgument(debug.traceback(), "LockProperty", 2, lockMode, "number")
 			end
 			
-			if lockMode < 1 or lockMode > 3 then error("Argument #2 to 'LockProperty' must be a number from 1 to 3", 0) end
+			if lockMode < 1 or lockMode > 3 then ferror(debug.traceback(), "Argument #2 to 'LockProperty' must be a number from 1 to 3", 0) end
 			if rawget(self, "____l")[name .. "____l" .. lockMode] then
 				local LType = {"Reading","Writing","Reading and Writing"}
 				local fn = self:GetFullName()
-				error(LType[lockMode] .. " property '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is already locked!", 0)
+				ferror(debug.traceback(), LType[lockMode] .. " property '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is already locked!", 0)
 			end
 			
 			local x;pcall(function()x=rawget(self, "____o")[name]end);
@@ -342,7 +342,7 @@ ModifiedObjects = {
 		StartJob = function(self, Job)
 			if FrameworkModule.Jobs:findFirstChild(Job) and not FrameworkJobs[Job] then
 				FrameworkJobs[Job] = require(FrameworkModule.Jobs[Job])
-				FrameworkJobs[Job](Object(game), Object(game), Object(workspace), Object(workspace), table, string, math, typeof, type, Instance, print, require)
+				return FrameworkJobs[Job](Object(game), Object(game), Object(workspace), Object(workspace), table, string, math, typeof, type, Instance, print, require)
 			end
 		end,
 		GetFrameworkModule = function(self)
@@ -394,7 +394,7 @@ function Object(Obj)
 		__index = function(self, index)
 			if rawget(self, "____l")[index .. "____l1"] or rawget(self, "____l")[index .. "____l3"] and index ~= "GetFullName" then
 				local fn = self:GetFullName()
-				error("Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Reading is not allowed!", 0)
+				ferror(debug.traceback(), "Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Reading is not allowed!", 0)
 			elseif rawget(self, "____l")[index .. "____l2"] then
 				return rawget(self, "____l")[index .. "____l2"]
 			end
@@ -446,19 +446,19 @@ function Object(Obj)
 						value = Object(value)
 					end
 				end) then
-					error(index .. " is not a valid member of " .. self.ClassName, 0)
+					ferror(debug.traceback(), index .. " is not a valid member of " .. self.ClassName, 0)
 				end
 				
 				return value
 			end
 		end,
 		__call = function(self) -- for now
-			error("Attempt to call " .. self.ClassName)
+			ferror(debug.traceback(), "Attempt to call " .. self.ClassName)
 		end,
 		__newindex = function(self, index, value)
 			if rawget(self, "____l")[index .. "____l2"] or rawget(self, "____l")[index .. "____l3"] then
 				local fn = self:GetFullName()
-				error("Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
+				ferror(debug.traceback(), "Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
 			end
 			
 			if Original.typeof(value) == "table" and value.XeptixFrameworkObject then
@@ -554,7 +554,7 @@ end
 function LoadService(name)
 	local Service = require(FrameworkModule.Services[name])
 	local ServiceObject = CreateService(Service[1], Service[2], Service[3])
-	ServiceObject:_StartService(Object(game), Object(game), Object(workspace), Object(workspace), table, string, math, typeof, type, Instance, print, require)
+	ServiceObject:_StartService(Object(game), Object(game), Object(workspace), Object(workspace), table, string, math, typeof, type, Instance, print, require, ferror)
 
 	return ServiceObject
 end
@@ -576,22 +576,21 @@ game = Object(Original.game)
 Game = game
 workspace = Object(Original.workspace)
 Workspace = workspace
-FrameworkService = nil
-spawn(function() FrameworkService = game:GetService("FrameworkService") end)
 table = NewMeta(Original.table, {
 	format = function(t, f, j)
-		FrameworkService:CheckArgument(nil, 1, t, "table")
-		FrameworkService:CheckArgument(nil, 2, f, "string")
-		FrameworkService:CheckArgument(nil, 3, j, {"string", "nil"})
+		FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
+		FrameworkService:CheckArgument(debug.traceback(), nil, 2, f, "string")
+		FrameworkService:CheckArgument(debug.traceback(), nil, 3, j, {"string", "nil"})
 		
 		local n = {}
 		local numa, numb = #t, 0
 		if #t < 100 then
-			for _,v in ipairs(t) do numb = numb + 1 end
+			for _,v in pairs(t) do numb = numb + 1 end
 		end
 		
 		local function proceed(i, v)
-			table.insert(n, f:gsub("%%i", tostring(i)):gsub("%%v", tostring(v)))
+			local s = f:gsub("%%i", tostring(i)):gsub("%%v", tostring(v))
+			table.insert(n, s)
 		end
 		
 		if #t >= 100 or numa == numb then -- list it in order
@@ -604,16 +603,18 @@ table = NewMeta(Original.table, {
 			end
 		end
 		
+		for _,v in pairs(n) do print(_,v) end
+		
 		return table.join(n, j or " ")
 	end,
 	join = function(t, j)
-		FrameworkService:CheckArgument(nil, 1, t, "table")
-		FrameworkService:CheckArgument(nil, 2, j, "string")
+		FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
+		FrameworkService:CheckArgument(debug.traceback(), nil, 2, j, "string")
 		
 		local s = ""
 		local numa, numb = #t, 0
 		if #t < 100 then
-			for _,v in ipairs(t) do numb = numb + 1 end
+			for _,v in pairs(t) do numb = numb + 1 end
 		end
 		
 		if #t >= 100 or numa == numb then -- list in order
@@ -631,8 +632,8 @@ table = NewMeta(Original.table, {
 		return s
 	end,
 	recursive = function(t, f)
-		FrameworkService:CheckArgument(nil, 1, t, "table")
-		FrameworkService:CheckArgument(nil, 2, f, "function")
+		FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
+		FrameworkService:CheckArgument(debug.traceback(), nil, 2, f, "function")
 		
 		for i,v in pairs(t) do
 			f(t, i, v)
@@ -695,12 +696,41 @@ require = function(module)
 	
 	return Original.require(module)
 end
+ferror = function(stack, err)
+	local yourStack
+	for line in stack:gmatch("([^\r\n]*)[\r\n]") do
+		if not line:find(FrameworkModule:GetFullName()) and line ~= "Stack End" and line ~= "Stack Begin" and line ~= "" then
+			yourStack = line
+			break
+		end
+	end
+	
+	-- NOTE: if you got an error here, it is NOT a framework error. Ignore all lines in the stack trace that go to the framework's scripts. Typically the very bottom script(s) are the ones where the actual error was triggered. More info on this in documentation.
+	error(err .. (yourStack and ("\n" .. yourStack) or ""), 0)
+end
+
 
 
 -- Initalize the framework's core
-game:StartJob("Core")
+FrameworkService = game:StartJob("Core")
 
 
 
--- Return the modified variables
-return {game, game, workspace, workspace, table, string, math, typeof, type, Instance, print, require}
+-- Return the function to modify the environment
+return function(environment)
+	environment.game = game
+	environment.Game = game
+	environment.workspace = game.Workspace
+	environment.Workspace = game.Workspace
+	environment.Instance = Instance
+	environment.print = print
+	environment.require = require
+	environment.type = type
+	environment.typeof = typeof
+	environment.table = table
+	environment.math = math
+	environment.string = string
+	environment.script = Object(environment.script)
+	
+	return environment
+end
