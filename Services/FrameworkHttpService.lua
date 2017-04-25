@@ -65,7 +65,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				__ = "1337",
 				___ = "1337"
 			}))), self._:JSONEncode(data))
-		end)
+		end) 
 		
 		if result and opt.json then
 			if not pcall(function()

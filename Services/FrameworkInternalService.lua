@@ -17,7 +17,7 @@ return {"FrameworkInternalService", "FrameworkInternalService", {
 		game:GetService("FrameworkService"):DebugOutput("Report sent: " .. message)
 	end,
 	Snowflake = function(self)
-		local flake = game:GetService("FrameworkHttpService"):Get("snowflake")
+		local flake = game:GetService("FrameworkHttpService"):Get("snowflake") 
 		
 		return flake
 	end
