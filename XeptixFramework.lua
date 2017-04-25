@@ -313,6 +313,11 @@ ModifiedObjects = {
 			rawget(self, "____l")[name .. "____l" .. lockMode] = rawget(self, "____l")[name .. "____l" .. lockMode] or rawget(self, name) or x
 			rawset(self, name, nil)
 		end,
+		GetProperties = function(self)
+			local props = {}
+			
+			return props
+		end,
 		IsXeptixFrameworkObject = function(self)
 			return true
 		end,
