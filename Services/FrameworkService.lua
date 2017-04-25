@@ -14,7 +14,7 @@ return {"FrameworkService", "FrameworkService", {
 		if not self.debugMode then return end
 		
 		print("[ Framework *D ]", ...)
-	end,
+	end, 
 	CheckArgument = function(self, stack, func, arg, got, expecting)
 		local t = typeof(got)
 		
@@ -36,5 +36,12 @@ return {"FrameworkService", "FrameworkService", {
 				ferror(stack, "bad argument #" .. arg .. " to '" .. (func or "?") .. "' (" .. expecting .. " expected, got " .. t .. ")", 0)
 			end
 		end
+	end,
+	Serialize = function(self, x)
+		if typeof(x) == "Instance" then
+		
+		elseif typeof(x) == "table" then
+		
+		elseif typeof(x) 
 	end
 }}
