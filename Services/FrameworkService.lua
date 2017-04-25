@@ -38,10 +38,59 @@ return {"FrameworkService", "FrameworkService", {
 		end
 	end,
 	Serialize = function(self, x)
+		local s = {}
+		
 		if typeof(x) == "Instance" then
-		
+			s._____serialized = "Instance"
+			s.x = {}
+			for i,v in pairs(x:GetProperties()) do
+				if i ~= "Parent" then
+					s.x[i] = self:Serialize(v)
+				end
+			end
+			
+			x.c = {}
+			for _,v in pairs(x:GetChildren()) do
+				table.insert(x.c, self:Serialize(v))
+			end
 		elseif typeof(x) == "table" then
+			s._____serialized = "table"
+			s.x = x
+		else
+			s._____serialized = typeof(x)
+			s.x = tostring(x)
+		end
 		
-		elseif typeof(x) 
+		return game.HttpService:JSONEncode(s)
+	end,
+	Unserialize = function(self, x)
+		local s
+		pcall(function()
+			s = game.HttpService:JSONDecode(x)
+		end)
+		
+		if s and typeof(s) == "table" and s._____serialized and s.x then
+			if s._____serialized == "table" or s._____serialized == "string" then
+				return s.x
+			elseif s._____serialized == "number" then
+				return tonumber(s.x)
+			elseif s._____serialized == "Instance" then
+				local i = Instance.new(self:Unserialize(s.x.ClassName))
+				for _,v in pairs(s.x) do
+					pcall(function() i[_] = self:Unserialize(v) end)
+				end
+				
+				for _,v in pairs(x.c) do
+					local c = self:Unserialize(v)
+					c.Parent = i
+				end
+				
+				return i
+			elseif s._____serialized == "Enum" then
+			
+			elseif s._____serialized == "BrickColor" then
+			
+			end
+		end
 	end
 }}
