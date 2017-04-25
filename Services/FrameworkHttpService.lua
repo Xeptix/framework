@@ -21,31 +21,11 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
 	end,
 	Get = function(self, url, opt)
-		local result
-		pcall(function()
-			result = self._:GetAsync(self:AppendQueryString(url, self:Encode(self:QueryString({
-				ServerId = game.FrameworkInternalService.ServerId,
-				JobId = game.JobId or "0",
-				PlaceId = game.PlaceId or "0",
-				CreatorId = game.CreatorId or "0",
-				CreatorType = tostring(game.CreatorType),
-				VIPServerId = game.VIPServerId or 0,
-				VIPServerOwnerId = game.VIPServerOwnerId or 0
-			}))), true)
-		end)
+		if not opt then opt = {} end
 		
-		if result and opt.json then
-			pcall(function()
-				result = seelf._:JSONDecode(result)
-			end)
-		end
-		
-		return result
-	end,
-	Post = function(self, url, data, opt)
 		local result
-		pcall(function()
-			result = self._:PostAsync(self:AppendQueryString(url, self:Encode(self:QueryString({
+		local s, e = pcall(function()
+			result = self._:GetAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
 				ServerId = game.FrameworkInternalService.ServerId,
 				JobId = game.JobId or "0",
 				PlaceId = game.PlaceId or "0",
@@ -53,17 +33,49 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				CreatorType = tostring(game.CreatorType),
 				VIPServerId = game.VIPServerId or 0,
 				VIPServerOwnerId = game.VIPServerOwnerId or 0,
-				
-			}))), data)
+				_ = "1337",
+				__ = "1337",
+				___ = "1337"
+			}))), true)
 		end)
 		
 		if result and opt.json then
-			pcall(function()
-				result = seelf._:JSONDecode(result)
-			end)
+			if not pcall(function()
+				result = self._:JSONDecode(result)
+			end) then
+				result = nil
+			end
 		end
 		
-		return result
+		return result, e
+	end,
+	Post = function(self, url, data, opt)
+		if not opt then opt = {} end
+		local result
+		local s, e = pcall(function()
+			result = self._:PostAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
+				ServerId = game.FrameworkInternalService.ServerId,
+				JobId = game.JobId or "0",
+				PlaceId = game.PlaceId or "0",
+				CreatorId = game.CreatorId or "0",
+				CreatorType = tostring(game.CreatorType),
+				VIPServerId = game.VIPServerId or 0,
+				VIPServerOwnerId = game.VIPServerOwnerId or 0,
+				_ = "1337",
+				__ = "1337",
+				___ = "1337"
+			}))), self._:JSONEncode(data))
+		end)
+		
+		if result and opt.json then
+			if not pcall(function()
+				result = self._:JSONDecode(result)
+			end) then
+				result = nil
+			end
+		end
+		
+		return result, e
 	end,
 	QueryString = function(self, items)
 		game.FrameworkService:CheckArgument(debug.traceback(), "QueryString", 1, items, "table")
