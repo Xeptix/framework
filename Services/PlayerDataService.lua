@@ -6,11 +6,13 @@ return {"PlayerDataService", "PlayerDataService", {
 
 		if game:Is("Server") then
 			Databases = {}
-			Databases[1] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData")
-			Databases[2] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData2")
-			Databases[3] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData3")
-			Databases[4] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData4")
-			Databases[5] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData5")
+			pcall(function()
+				Databases[1] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData")
+				Databases[2] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData2")
+				Databases[3] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData3")
+				Databases[4] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData4")
+				Databases[5] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData5")
+			end)
 		end
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
 	end,
@@ -105,7 +107,7 @@ return {"PlayerDataService", "PlayerDataService", {
 			self.storage[strid].lastTouch = os.time()
 		end
 		
-		function self.storage[strid]:Get(Key)
+		function _self:Get(Key)
 			if not self.storage[strid] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return self:LoadData(id, profile):Get(Key)
@@ -115,7 +117,7 @@ return {"PlayerDataService", "PlayerDataService", {
 			return self.storage[strid].data[Key]
 		end
 		
-		function self.storage[strid]:Set(Key, Value)
+		function _self:Set(Key, Value)
 			if not self.storage[strid] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return self:LoadData(id, profile):Set(Key, Value)
@@ -129,7 +131,7 @@ return {"PlayerDataService", "PlayerDataService", {
 			self.storage[strid].Changed:fire(Key, Value, old)
 		end
 		
-		function self.storage[strid]:iGet(Key)
+		function _self:iGet(Key)
 			if not self.storage[strid] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return self:LoadData(id, profile):iGet(Key)
@@ -139,7 +141,7 @@ return {"PlayerDataService", "PlayerDataService", {
 			return self.storage[strid].idata[Key]
 		end
 		
-		function self.storage[strid]:iSet(Key, Value)
+		function _self:iSet(Key, Value)
 			if not self.storage[strid] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return self:LoadData(id, profile):iSet(Key, Value)
@@ -153,7 +155,7 @@ return {"PlayerDataService", "PlayerDataService", {
 			self.storage[strid].iChanged:fire(Key, Value, old)
 		end
 		
-		function self.storage[strid]:Delete()
+		function _self:Delete()
 			if not self.storage[strid] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return self:LoadData(id, profile):Delete()
@@ -167,7 +169,7 @@ return {"PlayerDataService", "PlayerDataService", {
 			self.storage[strid].data = {}
 		end
 		
-		function self.storage[strid]:Save()
+		function _self:Save()
 			if not self.storage[strid] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return self:LoadData(id, profile):Save()
@@ -176,14 +178,14 @@ return {"PlayerDataService", "PlayerDataService", {
 			if self.storage[strid].lastSave > self.storage[strid].lastTouch or id <= 0 then return end
 			
 			self.storage[strid].lastSave = os.time()
-			local u = self.storage[strid]:iGet("username") or ("Player#" .. id)
+			local u = _self:iGet("username") or ("Player#" .. id)
 			local d = game.FrameworkService:Serialize({player = self.storage[strid].data, internal = self.storage[strid].idata, lastTouch = self.storage[strid].lastTouch, lastSave = self.storage[strid].lastSave})
 			
-			game.FrameworkHttpService:Post("playerdata_set", {UserID = id, Profile = profile, Data = d, Username = u, PlayerInfo = self.storage[strid]:iGet("PlayerInfo") or {}}, {json = true})
+			game.FrameworkHttpService:Post("playerdata_set", {UserID = id, Profile = profile, Data = d, Username = u, PlayerInfo = _self:iGet("PlayerInfo") or {}}, {json = true})
 			Databases[profile]:SetAsync("PlayerList$" .. id, d)
 		end
 		
-		function self.storage[strid]:Update(Keys, UpdateFunctions)
+		function _self:Update(Keys, UpdateFunctions)
 			if not self.storage[strid] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return self:LoadData(id, profile):Update(Keys, UpdateFunctions)
@@ -212,7 +214,7 @@ return {"PlayerDataService", "PlayerDataService", {
 			end
 		end
 		
-		function self.storage[strid]:GetKeys()
+		function _self:GetKeys()
 			if not self.storage[strid] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return self:LoadData(id, profile):GetKeys()
@@ -231,7 +233,7 @@ return {"PlayerDataService", "PlayerDataService", {
 	end,
 	UnloadData = function(self, player, profile)
 	
-	end
+	end,
 	SaveData = function(self, player, profile)
 	
 	end,
