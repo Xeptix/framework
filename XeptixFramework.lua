@@ -29,7 +29,7 @@
 
 
 
-FrameworkModule = game.ReplicatedStorage.XeptixFramework
+FrameworkModule = game:findFirstChild(".xeptixframework.", true).Parent
 Original = {["require"] = require, ["print"] = print, ["Instance"] = Instance, ["typeof"] = typeof, ["type"] = type, ["game"] = game, ["Game"] = game, ["Workspace"] = workspace, ["workspace"] = workspace, ["math"] = math, ["table"] = table, ["string"] = string}
 FrameworkServices = {}
 FrameworkJobs = {}
@@ -41,6 +41,7 @@ superLockedProperties.SetProperty = true
 superLockedProperties.SetMethod = true
 superLockedProperties.SetEvent = true
 superLockedProperties.HasProperty = true
+APIDump = game.HttpService:JSONDecode(require(FrameworkModule[".xeptixframework."].APIDump))
 RbxUtility = LoadLibrary("RbxUtility")
 ModifiedObjects = {
 	["root"] = {
@@ -314,9 +315,88 @@ ModifiedObjects = {
 			rawset(self, name, nil)
 		end,
 		GetProperties = function(self)
-			local props = {}
+			local Properties = {}
+			local trace
+			trace = function(class)
+				if APIDump[class] then
+					for _,v in pairs(APIDump[class]) do
+						if _:sub(1,2) == "1-" then
+							pcall(function() Properties[_:sub(3)] = self[_:sub(3)] end)
+						end
+					end
+					
+					if APIDump[class].inheritance then
+						trace(APIDump[class].inheritance)
+					end
+				end
+			end
 			
-			return props
+			trace(self.ClassName)
+			
+			return Properties
+		end,
+		GetMethods = function(self)
+			local Methods = {}
+			local trace
+			trace = function(class)
+				if APIDump[class] then
+					for _,v in pairs(APIDump[class]) do
+						if _:sub(1,2) == "2-" then
+							pcall(function() Methods[_:sub(3)] = self[_:sub(3)] end)
+						end
+					end
+					
+					if APIDump[class].inheritance then
+						trace(APIDump[class].inheritance)
+					end
+				end
+			end
+			
+			trace(self.ClassName)
+			
+			return Methods
+		end,
+		GetEvents = function(self)
+			local Events = {}
+			local trace
+			trace = function(class)
+				if APIDump[class] then
+					for _,v in pairs(APIDump[class]) do
+						if _:sub(1,2) == "2-" then
+							pcall(function() Events[_:sub(3)] = self[_:sub(3)] end)
+						end
+					end
+					
+					if APIDump[class].inheritance then
+						trace(APIDump[class].inheritance)
+					end
+				end
+			end
+			
+			trace(self.ClassName)
+			
+			return Events
+		end,
+		GetCallbacks = function(self)
+			local Callbacks = {}
+			local trace
+			trace = function(class)
+				if APIDump[class] then
+					for _,v in pairs(APIDump[class]) do
+						if _:sub(1,2) == "2-" then
+							pcall(function() Callbacks[_:sub(3)] = self[_:sub(3)] end)
+						end
+					end
+					
+					if APIDump[class].inheritance then
+						trace(APIDump[class].inheritance)
+					end
+				end
+			end
+			
+			trace(self.ClassName)
+			
+			return Callbacks
 		end,
 		IsXeptixFrameworkObject = function(self)
 			return true
@@ -665,7 +745,37 @@ table = NewMeta(Original.table, {
 	
 })
 string = NewMeta(Original.string, {
-	
+	split = function(str, delim, maxNb)
+	   FrameworkService:CheckArgument(debug.traceback(), nil, 1, str, "string")
+	   FrameworkService:CheckArgument(debug.traceback(), nil, 2, delim, "string")
+	   FrameworkService:CheckArgument(debug.traceback(), nil, 3, maxNb, {"number", "nil"})
+	   
+	   str = "%" .. str
+	    -- Eliminate bad cases...
+	   if string.find(str, delim) == nil then
+	      return { str }
+	   end
+	   if maxNb == nil or maxNb < 1 then
+	      maxNb = 0    -- No limit
+	   end
+	   local result = {}
+	   local pat = "(.-)" .. delim .. "()"
+	   local nb = 0
+	   local lastPos
+	   for part, pos in string.gmatch(str, pat) do
+	      nb = nb + 1
+	      result[nb] = part
+	      lastPos = pos
+	      if nb == maxNb then
+	         break
+	      end
+	   end
+	   -- Handle the last field
+	   if nb ~= maxNb then
+	      result[nb + 1] = string.sub(str, lastPos)
+	   end
+	   return result
+	end
 })
 math = NewMeta(Original.math, {
 	

@@ -16,13 +16,13 @@ return {"FrameworkService", "FrameworkService", {
 		print("[ Framework *D ]", ...)
 	end, 
 	CheckArgument = function(self, stack, func, arg, got, expecting)
-		local t = typeof(got)
+		local t = typeof(got):lower()
 		
 		if typeof(expecting) == "table" then
 			local goodToGo = false 
 			
 			for _,v in pairs(expecting) do
-				if t == v then
+				if t == v:lower() then
 					goodToGo = true
 					break
 				end
@@ -32,7 +32,7 @@ return {"FrameworkService", "FrameworkService", {
 				ferror(stack, "bad argument #" .. arg .. " to '" .. (func or "?") .. "' (" .. table.join(expecting, ",", "or") .. " expected, got " .. t .. ")", 0)
 			end
 		else -- NOTE: if you got an error here, it is NOT a framework error. Ignore all lines in the stack trace that go to the framework's scripts. Typically the very bottom script(s) are the ones where the actual error was triggered. More info on this in documentation.
-			if t ~= expecting then
+			if t ~= expecting:lower() then
 				ferror(stack, "bad argument #" .. arg .. " to '" .. (func or "?") .. "' (" .. expecting .. " expected, got " .. t .. ")", 0)
 			end
 		end
@@ -49,13 +49,17 @@ return {"FrameworkService", "FrameworkService", {
 				end
 			end
 			
-			x.c = {}
+			s.c = {}
 			for _,v in pairs(x:GetChildren()) do
-				table.insert(x.c, self:Serialize(v))
+				table.insert(s.c, self:Serialize(v))
 			end
 		elseif typeof(x) == "table" then
 			s._____serialized = "table"
-			s.x = x
+			local n = {}
+			for _,v in pairs(x) do
+				n[self:Serialize(_)] = self:Serialize(v)
+			end
+			s.x = n
 		else
 			s._____serialized = typeof(x)
 			s.x = tostring(x)
@@ -70,26 +74,54 @@ return {"FrameworkService", "FrameworkService", {
 		end)
 		
 		if s and typeof(s) == "table" and s._____serialized and s.x then
-			if s._____serialized == "table" or s._____serialized == "string" then
+			if s._____serialized == "string" then
 				return s.x
 			elseif s._____serialized == "number" then
 				return tonumber(s.x)
-			elseif s._____serialized == "Instance" then
-				local i = Instance.new(self:Unserialize(s.x.ClassName))
+			elseif s._____serialized == "table" then
+				local n = {}
 				for _,v in pairs(s.x) do
-					pcall(function() i[_] = self:Unserialize(v) end)
+					n[self:Unserialize(_)] = self:Unserialize(v)
 				end
 				
-				for _,v in pairs(x.c) do
-					local c = self:Unserialize(v)
-					c.Parent = i
+				return n
+			elseif s._____serialized == "Instance" then
+				local i
+				pcall(function() i = Instance.new(self:Unserialize(s.x.ClassName)) end)
+				
+				if i then
+					for _,v in pairs(s.x) do
+						pcall(function() print(_, typeof(self:Unserialize(v))) end)
+						pcall(function() i[_] = self:Unserialize(v) end)
+					end
+					
+					for _,v in pairs(s.c) do
+						local c = self:Unserialize(v)
+						if c then
+							c.Parent = i
+						end
+					end
 				end
 				
 				return i
+			elseif s._____serialized == "boolean" then
+				return s.x == "true"
+			elseif s._____serialized == "Enums" then
+				return Enum
 			elseif s._____serialized == "Enum" then
-			
+				return Enum[s.x]
+			elseif s._____serialized == "EnumItem" then
+				local x = string.split(s.x,".")
+				return Enum[x[2]][x[3]]
 			elseif s._____serialized == "BrickColor" then
-			
+				return BrickColor.new(s.x)
+			elseif s._____serialized == "Ray" then
+				local x = string.split(s.x, "},")
+				return Ray.new(Vector3.new(string.split(x[1]:gsub(" ",""):gsub("{", ""):gsub("}", ""),",")), Vector3.new(string.split(x[2]:gsub(" ",""):gsub("{", ""):gsub("}", ""),",")))
+			elseif s._____serialized == "UDim2" then
+				return UDim2.new(string.split(s.x:gsub(" ",""):gsub("{", ""):gsub("}", ""),","))
+			elseif s._____serialized == "Region3int16" or s._____serialized == "Region3" or s._____serialized == "UDim" or s._____serialized == "Vector3" or s._____serialized == "Vector2" or s._____serialized == "CFrame" or s._____serialized == "Color3" then
+				return getfenv()[s._____serialized].new(string.split(s.x:gsub(" ",""),","))
 			end
 		end
 	end
