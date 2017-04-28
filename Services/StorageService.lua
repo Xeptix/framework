@@ -23,8 +23,8 @@ return {"StorageService", "StorageService", {
 	Requests = 100,
 	storage = {},
 	Get = function(self, Key, NoCache)
-		game.FrameworkService:LockServer(debug.stack(), "Get")
-		game.FrameworkService:LockConnected(debug.stack(), "Get")
+		game.FrameworkService:LockServer(debug.traceback(), "Get")
+		game.FrameworkService:LockConnected(debug.traceback(), "Get")
 		
 		local Key = tostring(Key)
 		if self.storage[Key] and not NoCache then
@@ -50,8 +50,8 @@ return {"StorageService", "StorageService", {
 	Set = function(self, Key, Value)
 		if self.Requests <= 0 then repeat wait() until self.Requests >= 1 end self.Requests = self.Requests - 1
 		
-		game.FrameworkService:LockServer(debug.stack(), "Set")
-		game.FrameworkService:LockConnected(debug.stack(), "Set")
+		game.FrameworkService:LockServer(debug.traceback(), "Set")
+		game.FrameworkService:LockConnected(debug.traceback(), "Set")
 		
 		if self.storage[tostring(Key)] then
 			self.storage[tostring(Key)][1] = os.time()
@@ -73,15 +73,15 @@ return {"StorageService", "StorageService", {
 		return oValue
 	end,
 	Delete = function(self, Key)
-		game.FrameworkService:LockServer(debug.stack(), "Delete")
-		game.FrameworkService:LockConnected(debug.stack(), "Delete")
+		game.FrameworkService:LockServer(debug.traceback(), "Delete")
+		game.FrameworkService:LockConnected(debug.traceback(), "Delete")
 		
 		local Key = tostring(Key)
 		self:Set(Key, nil)
 	end,
 	Update = function(self, Keys, UpdateFunctions)
-		game.FrameworkService:LockServer(debug.stack(), "Update")
-		game.FrameworkService:LockConnected(debug.stack(), "Update")
+		game.FrameworkService:LockServer(debug.traceback(), "Update")
+		game.FrameworkService:LockConnected(debug.traceback(), "Update")
 		
 		if typeof(Keys) == "table" then
 			if typeof(UpdateFunctions) == "table" then

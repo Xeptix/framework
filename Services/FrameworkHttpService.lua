@@ -27,8 +27,8 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 	Get = function(self, url, opt)
 		if not opt then opt = {} end
 		
-		game.FrameworkService:LockServer(debug.stack(), "Get")
-		game.FrameworkService:LockConnected(debug.stack(), "Get")
+		game.FrameworkService:LockServer(debug.traceback(), "Get")
+		game.FrameworkService:LockConnected(debug.traceback(), "Get")
 		
 		local result
 		local s, e = pcall(function()
@@ -57,8 +57,8 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		return result, e
 	end,
 	Post = function(self, url, data, opt)
-		game.FrameworkService:LockServer(debug.stack(), "Post")
-		game.FrameworkService:LockConnected(debug.stack(), "Post")
+		game.FrameworkService:LockServer(debug.traceback(), "Post")
+		game.FrameworkService:LockConnected(debug.traceback(), "Post")
 		
 		if not opt then opt = {} end
 		local result
@@ -88,16 +88,16 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		return result, e
 	end,
 	QueryString = function(self, items)
-		game.FrameworkService:LockServer(debug.stack(), "QueryString")
-		game.FrameworkService:LockConnected(debug.stack(), "QueryString")
+		game.FrameworkService:LockServer(debug.traceback(), "QueryString")
+		game.FrameworkService:LockConnected(debug.traceback(), "QueryString")
 		
 		game.FrameworkService:CheckArgument(debug.traceback(), "QueryString", 1, items, "table")
 		
 		return "?" .. table.format(items, "%i=%v", "&")--todo: somehow encode these values lol
 	end,
 	AppendQueryString = function(self, url, query)
-		game.FrameworkService:LockServer(debug.stack(), "AppendQueryString")
-		game.FrameworkService:LockConnected(debug.stack(), "AppendQueryString")
+		game.FrameworkService:LockServer(debug.traceback(), "AppendQueryString")
+		game.FrameworkService:LockConnected(debug.traceback(), "AppendQueryString")
 		
 		game.FrameworkService:CheckArgument(debug.traceback(), "AppendQueryString", 1, url, "string")
 		game.FrameworkService:CheckArgument(debug.traceback(), "AppendQueryString", 2, query, "string")
@@ -109,8 +109,8 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		end
 	end,
 	Encode = function(self, url)
-		game.FrameworkService:LockServer(debug.stack(), "Encode")
-		game.FrameworkService:LockConnected(debug.stack(), "Encode")
+		game.FrameworkService:LockServer(debug.traceback(), "Encode")
+		game.FrameworkService:LockConnected(debug.traceback(), "Encode")
 		
 		game.FrameworkService:CheckArgument(debug.traceback(), "Encode", 1, url, "string")
 		if url:sub(1,1) == "?" then
@@ -124,8 +124,8 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		return self._:UrlEncode(url)
 	end,
 	Decode = function(self, url)
-		game.FrameworkService:LockServer(debug.stack(), "Decode")
-		game.FrameworkService:LockConnected(debug.stack(), "Decode")
+		game.FrameworkService:LockServer(debug.traceback(), "Decode")
+		game.FrameworkService:LockConnected(debug.traceback(), "Decode")
 		
 		game.FrameworkService:CheckArgument(debug.traceback(), "Decode", 1, url, "string")
 		return self._:UrlDecode(url)

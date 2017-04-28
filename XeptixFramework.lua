@@ -459,7 +459,7 @@ ModifiedObjects = {
 		LoadData = function(self, profile, nocache)
 			game.FrameworkService:CheckArgument(debug.traceback(), "LoadData", 1, profile, {"number", "nil"})
 			
-			game.FrameworkService:LockServer(debug.stack(), "LoadData")
+			game.FrameworkService:LockServer(debug.traceback(), "LoadData")
 
 			return game:GetService("PlayerDataService"):LoadData(self, profile, nocache)
 		end,
@@ -480,14 +480,14 @@ ModifiedObjects = {
 		SaveData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "SaveData", 1, profile, {"number", "nil"})
 			
-			game.FrameworkService:LockServer(debug.stack(), "SaveData")
+			game.FrameworkService:LockServer(debug.traceback(), "SaveData")
 
 			return game:GetService("PlayerDataService"):SaveData(self, profile)
 		end,
 		DeleteData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "DeleteData", 1, profile, {"number", "nil"})
 			
-			game.FrameworkService:LockServer(debug.stack(), "DeleteData")
+			game.FrameworkService:LockServer(debug.traceback(), "DeleteData")
 
 			return game:GetService("PlayerDataService"):DeleteData(self, profile)
 		end,
@@ -495,14 +495,14 @@ ModifiedObjects = {
 			game.FrameworkService:CheckArgument(debug.traceback(), "CloneData", 1, profile, {"number", "nil"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "CloneData", 2, profile2, {"number", "nil"})
 			
-			game.FrameworkService:LockServer(debug.stack(), "CloneData")
+			game.FrameworkService:LockServer(debug.traceback(), "CloneData")
 
 			return game:GetService("PlayerDataService"):CloneData(self, profile, profile2)
 		end,
 		UnloadData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "UnloadData", 1, profile, {"number", "nil"})
 			
-			game.FrameworkService:LockServer(debug.stack(), "UnloadData")
+			game.FrameworkService:LockServer(debug.traceback(), "UnloadData")
 
 			return game:GetService("PlayerDataService"):UnloadData(self, profile)
 		end

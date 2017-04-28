@@ -43,7 +43,7 @@ return {"PlayerDataService", "PlayerDataService", {
 		game.FrameworkService:CheckArgument(debug.traceback(), "LoadData", 1, player, {"number","Instance"})
 		game.FrameworkService:CheckArgument(debug.traceback(), "LoadData", 2, profile, {"number","nil"})
 		
-		game.FrameworkService:LockServer(debug.stack(), "LoadData")
+		game.FrameworkService:LockServer(debug.traceback(), "LoadData")
 		
 		if profile and (profile < 1 or profile > 5) then error("Profile must be a number from 1 to 5") end
 		
@@ -307,7 +307,7 @@ return {"PlayerDataService", "PlayerDataService", {
 		game.FrameworkService:CheckArgument(debug.traceback(), "UnloadData", 1, player, {"number","Instance"})
 		game.FrameworkService:CheckArgument(debug.traceback(), "UnloadData", 2, profile, {"number","nil"})
 		
-		game.FrameworkService:LockServer(debug.stack(), "UnloadData")--
+		game.FrameworkService:LockServer(debug.traceback(), "UnloadData")--
 		
 		if profile and (profile < 1 or profile > 5) then error("Profile must be a number from 1 to 5") end
 		
@@ -327,7 +327,7 @@ return {"PlayerDataService", "PlayerDataService", {
 		game.FrameworkService:CheckArgument(debug.traceback(), "SaveData", 1, player, {"number","Instance"})
 		game.FrameworkService:CheckArgument(debug.traceback(), "SaveData", 2, profile, {"number","nil"})
 		
-		game.FrameworkService:LockServer(debug.stack(), "SaveData")
+		game.FrameworkService:LockServer(debug.traceback(), "SaveData")
 		
 		if profile and (profile < 1 or profile > 5) then error("Profile must be a number from 1 to 5") end
 		
@@ -351,7 +351,7 @@ return {"PlayerDataService", "PlayerDataService", {
 		game.FrameworkService:CheckArgument(debug.traceback(), "DeleteData", 1, player, {"number","Instance"})
 		game.FrameworkService:CheckArgument(debug.traceback(), "DeleteData", 2, profile, {"number","nil"})
 		
-		game.FrameworkService:LockServer(debug.stack(), "DeleteData")
+		game.FrameworkService:LockServer(debug.traceback(), "DeleteData")
 		
 		if profile and (profile < 1 or profile > 5) then error("Profile must be a number from 1 to 5") end
 		
@@ -376,7 +376,7 @@ return {"PlayerDataService", "PlayerDataService", {
 		game.FrameworkService:CheckArgument(debug.traceback(), "CloneData", 2, profile1, {"number","nil"})
 		game.FrameworkService:CheckArgument(debug.traceback(), "CloneData", 3, profile2, {"number","nil"})
 		
-		game.FrameworkService:LockServer(debug.stack(), "CloneData")
+		game.FrameworkService:LockServer(debug.traceback(), "CloneData")
 		
 		if profile1 and (profile1 < 1 or profile1 > 5) then error("Profile must be a number from 1 to 5") end
 		if not profile1 then profile1 = 1 end
