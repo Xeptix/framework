@@ -450,7 +450,7 @@ ModifiedObjects = {
 				return game.FrameworkHttpService.HttpEnabled and game.FrameworkHttpService.HttpConnected
 			elseif condition:lower() == "full" then
 				return game.Players.NumPlayers >= game.Players.MaxPlayers
-			end 
+			end  
 			
 			return false
 		end
