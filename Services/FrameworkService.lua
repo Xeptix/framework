@@ -6,14 +6,14 @@ return {"FrameworkService", "FrameworkService", {
 
 		self:DebugOutput("Service " .. self .. " has started successfully!")
 	end,
-	Output = function(self, ...)
+	Output = function(self, ...) 
 		print("[ Framework ]", ...)
 	end,
 	debugMode = false,
 	DebugOutput = function(self, ...)
 		if not self.debugMode then return end
 		
-		print("[ Framework *D ]", ...)
+		print("[ Framework *D ]", ...)--
 	end, 
 	CheckArgument = function(self, stack, func, arg, got, expecting)
 		local t = typeof(got):lower()
@@ -37,7 +37,22 @@ return {"FrameworkService", "FrameworkService", {
 			end
 		end
 	end,
-	Serialize = function(self, x)
+	LockServer = function(self, stack, name)
+		if not game:Is("Server") then
+			ferror(stack, name .. " must be ran on the server.")
+		end
+	end,
+	LockClient = function(self, stack, name)
+		if not game:Is("Client") then
+			ferror(stack, name .. " must be ran on the client.")
+		end
+	end,
+	LockConnected = function(self, stack, name)
+		if not game:Is("Connected") then
+			ferror(stack, name .. " requires your game to be connected to the framework's webservers. Open your game in Studio and use the Xeptix Framework Plugin to connect your game!")
+		end
+	end,
+	Serialize = function(self, x, o)
 		local s = {}
 		
 		if typeof(x) == "Instance" then
@@ -65,10 +80,10 @@ return {"FrameworkService", "FrameworkService", {
 			s.x = tostring(x)
 		end
 		
-		return game.HttpService:JSONEncode(s)
+		return o and s or game.HttpService:JSONEncode(s)
 	end,
 	Unserialize = function(self, x)
-		local s
+		local s = x
 		pcall(function()
 			s = game.HttpService:JSONDecode(x)
 		end)

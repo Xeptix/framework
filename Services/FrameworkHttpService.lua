@@ -5,16 +5,20 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require = a, b, c, d, e, f, g, h, i, j, k, l
 
 		self:SetProperty("HttpEnabled", false)
+		self:SetProperty("HttpConnected", false)
 		self:SetProperty("_", game:GetService("HttpService"))
-		local passed, msg = pcall(function()
-			self:Get("http://0.0.0.0", {})
-		end)
 		
-		if passed then
-			self.HttpEnabled = true
-		else
-			if msg:lower() ~= "http requests are not enabled" then
+		if game:Is("Server") then
+			local passed, msg = pcall(function()
+				self:Get("http://0.0.0.0", {})
+			end)
+			
+			if passed then
 				self.HttpEnabled = true
+			else--
+				if msg:lower() ~= "http requests are not enabled" then
+					self.HttpEnabled = true
+				end
 			end
 		end
 
@@ -22,6 +26,9 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 	end,
 	Get = function(self, url, opt)
 		if not opt then opt = {} end
+		
+		game.FrameworkService:LockServer(debug.stack(), "Get")
+		game.FrameworkService:LockConnected(debug.stack(), "Get")
 		
 		local result
 		local s, e = pcall(function()
@@ -50,6 +57,9 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		return result, e
 	end,
 	Post = function(self, url, data, opt)
+		game.FrameworkService:LockServer(debug.stack(), "Post")
+		game.FrameworkService:LockConnected(debug.stack(), "Post")
+		
 		if not opt then opt = {} end
 		local result
 		local s, e = pcall(function()
@@ -78,11 +88,17 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		return result, e
 	end,
 	QueryString = function(self, items)
+		game.FrameworkService:LockServer(debug.stack(), "QueryString")
+		game.FrameworkService:LockConnected(debug.stack(), "QueryString")
+		
 		game.FrameworkService:CheckArgument(debug.traceback(), "QueryString", 1, items, "table")
 		
 		return "?" .. table.format(items, "%i=%v", "&")--todo: somehow encode these values lol
 	end,
 	AppendQueryString = function(self, url, query)
+		game.FrameworkService:LockServer(debug.stack(), "AppendQueryString")
+		game.FrameworkService:LockConnected(debug.stack(), "AppendQueryString")
+		
 		game.FrameworkService:CheckArgument(debug.traceback(), "AppendQueryString", 1, url, "string")
 		game.FrameworkService:CheckArgument(debug.traceback(), "AppendQueryString", 2, query, "string")
 		
@@ -93,6 +109,9 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		end
 	end,
 	Encode = function(self, url)
+		game.FrameworkService:LockServer(debug.stack(), "Encode")
+		game.FrameworkService:LockConnected(debug.stack(), "Encode")
+		
 		game.FrameworkService:CheckArgument(debug.traceback(), "Encode", 1, url, "string")
 		if url:sub(1,1) == "?" then
 			url = url:gsub("?", "THISISREALLYBADCODEBUTITREPLACESDAQUESTIONMARKSOOHWELL")
@@ -105,6 +124,9 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		return self._:UrlEncode(url)
 	end,
 	Decode = function(self, url)
+		game.FrameworkService:LockServer(debug.stack(), "Decode")
+		game.FrameworkService:LockConnected(debug.stack(), "Decode")
+		
 		game.FrameworkService:CheckArgument(debug.traceback(), "Decode", 1, url, "string")
 		return self._:UrlDecode(url)
 	end,
