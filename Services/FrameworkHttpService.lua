@@ -8,7 +8,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		self:SetProperty("HttpConnected", false)
 		self:SetProperty("_", game:GetService("HttpService"))
 		
-		if game:Is("Server") then
+		if game:Is("Server") and game:GetFrameworkModule().WebConnection.Connection.Value then
 			local passed, msg = pcall(function()
 				self:Get("http://0.0.0.0", {})
 			end)
