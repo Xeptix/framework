@@ -16,13 +16,15 @@ return {"PlayerDataService", "PlayerDataService", {
 		
 			game.ThreadService:Thread(function()
 				for _,v in pairs(game.PlayerDataService.storage) do
-					if v.lastTouched + 300 <= os.time() then -- hasn't been touched in 5 minutes, unload it if they aren't in-game
-						if not game.Players:GetPlayerByUserId(v.userid) then
-							game.PlayerDataService:UnloadData(v.userid, v.profile)
+					if v and v.lastTouched then
+						if v.lastTouched + 300 <= os.time() then -- hasn't been touched in 5 minutes, unload it if they aren't in-game
+							if not game.Players:GetPlayerByUserId(v.userid) then
+								game.PlayerDataService:UnloadData(v.userid, v.profile)
+							end
 						end
 					end
 					
-					if v.AutoSave and v.lastSave + 120 then
+					if v.AutoSave and v.lastSave and v.lastSave + 120 <= os.time() then
 						v:Save()
 					end
 				end
