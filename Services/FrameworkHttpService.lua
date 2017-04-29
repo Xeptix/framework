@@ -32,7 +32,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		
 		local result
 		local s, e = pcall(function()
-			result = self._:GetAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
+			result = self._:GetAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url.."/"..game:GetFrameworkModule().WebConnection.ApiKey.Value.."/"..game:GetFrameworkModule().WebConnection.GameKey.Value.."/"..game:GetFrameworkModule().WebConnection.SecretKey.Value, self:Encode(self:QueryString({
 				ServerId = game.FrameworkInternalService.ServerId,
 				JobId = game.JobId or "0",
 				PlaceId = game.PlaceId or "0",
@@ -63,7 +63,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		if not opt then opt = {} end
 		local result
 		local s, e = pcall(function()
-			result = self._:PostAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
+			result = self._:PostAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url.."/"..game:GetFrameworkModule().WebConnection.ApiKey.Value.."/"..game:GetFrameworkModule().WebConnection.GameKey.Value.."/"..game:GetFrameworkModule().WebConnection.SecretKey.Value, self:Encode(self:QueryString({
 				ServerId = game.FrameworkInternalService.ServerId,
 				JobId = game.JobId or "0",
 				PlaceId = game.PlaceId or "0",
