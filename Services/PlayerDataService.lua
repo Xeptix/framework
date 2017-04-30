@@ -3,8 +3,15 @@
 return {"PlayerDataService", "PlayerDataService", {
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require = a, b, c, d, e, f, g, h, i, j, k, l
-
 		if game:Is("Server") then
+			if game:GetFrameworkModule():FindFirstChild("ClientDataReplicator") then
+				game:GetFrameworkModule().ClientDataReplicator:Destroy()
+			end
+
+			local ClientDataReplicator = Instance.new("Folder", game:GetFrameworkModule())
+			ClientDataReplicator.Name = "ClientDataReplicator"
+			self:SetProperty("ClientDataReplicator", ClientDataReplicator)
+			
 			Databases = {}
 			pcall(function()
 				Databases[1] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData") -- for compatibility with framework v2 and v1
@@ -16,8 +23,8 @@ return {"PlayerDataService", "PlayerDataService", {
 		
 			game.ThreadService:Thread(function()
 				for _,v in pairs(game.PlayerDataService.storage) do
-					if v and v.lastTouched then
-						if v.lastTouched + 300 <= os.time() then -- hasn't been touched in 5 minutes, unload it if they aren't in-game
+					if v and v.lastTouch then
+						if v.lastTouch + 300 <= os.time() then -- hasn't been touched in 2.5 minutes, unload it if they aren't in-game
 							if not game.Players:GetPlayerByUserId(v.userid) then
 								game.PlayerDataService:UnloadData(v.userid, v.profile)
 							end
@@ -35,6 +42,174 @@ return {"PlayerDataService", "PlayerDataService", {
 					v:Save()
 				end
 			end)
+		else
+			-- We are going to replicate how the server handle's data to a read-only version on the client. We'll be using values and changed event listeners for efficiency purposes.
+			self:SetProperty("ClientDataReplicator", game:GetFrameworkModule():WaitForChild("ClientDataReplicator"))
+			
+			local function ClientDataProfile(Data)
+				local strid = Data.Name
+				local split = string.split(strid, "-")
+				local id = tonumber(split[1])
+				local profile = tonumber(split[2])
+				self.storage[Data.Name] = {}
+				self.storage[strid].userid = id
+				self.storage[strid].profile = profile
+				self.storage[strid].data = {}
+				self.storage[strid].idata = {}
+				self.storage[strid].touched = {}
+				self.storage[strid].itouched = {} 
+				self.storage[strid].lastTouch = 0
+				self.storage[strid].ilastTouch = 0
+				self.storage[strid].edited = {}
+				self.storage[strid].iedited = {}
+				self.storage[strid].lastEdit = 0
+				self.storage[strid].lastSave = 0
+				self.storage[strid].ilastEdit = 0
+				self.storage[strid].AutoSave = nil -- we dont need this rite?
+				self.storage[strid].Changed = LoadLibrary("RbxUtility"):CreateSignal()
+				self.storage[strid].iChanged = LoadLibrary("RbxUtility"):CreateSignal()
+				
+				local function setupVal(v, internal)
+					local oldv = game.FrameworkInternalService:Val2Var(v)
+					v.Changed:connect(function()
+						local val = game.FrameworkInternalService:Val2Var(v)
+						if val == oldv then return end
+						
+						if internal then
+							game.PlayerDataService.storage[strid].idata[v.Name] = val
+							game.PlayerDataService.storage[strid].iChanged:fire(v.Name, val, game.PlayerDataService.storage[strid].idata[v.Name])
+						else
+							game.PlayerDataService.storage[strid].data[v.Name] = val
+							game.PlayerDataService.storage[strid].Changed:fire(v.Name, val, game.PlayerDataService.storage[strid].data[v.Name])
+						end
+					end)
+				end
+				
+				Data.InternalData.ChildAdded:connect(function(v)
+					local old = game.PlayerDataService.storage[strid].idata[v.Name]
+					game.PlayerDataService.storage[strid].idata[v.Name] = game.FrameworkInternalService:Val2Var(v)
+					setupVal(v, true)
+					
+					if old then
+						game.PlayerDataService.storage[strid].iChanged:fire(v.Name, game.PlayerDataService.storage[strid].idata[v.Name], old)
+					else
+						game.PlayerDataService.storage[strid].iChanged:fire(v.Name, game.PlayerDataService.storage[strid].idata[v.Name], nil)
+					end
+				end)
+				Data.InternalData.ChildRemoved:connect(function(v)
+					if game.PlayerDataService.storage[strid].idata[v.Name] ~= nil then
+						game.PlayerDataService.storage[strid].iChanged:fire(v.Name, nil, game.PlayerDataService.storage[strid].idata[v.Name])
+					end
+					
+					game.PlayerDataService.storage[strid].idata[v.Name] = nil
+				end)
+				
+				Data.PlayerData.ChildAdded:connect(function(v)
+					local old = game.PlayerDataService.storage[strid].data[v.Name]
+					game.PlayerDataService.storage[strid].data[v.Name] = game.FrameworkInternalService:Val2Var(v)
+					setupVal(v, true)
+					
+					if old then
+						game.PlayerDataService.storage[strid].Changed:fire(v.Name, game.PlayerDataService.storage[strid].data[v.Name], old)
+					else
+						game.PlayerDataService.storage[strid].Changed:fire(v.Name, game.PlayerDataService.storage[strid].data[v.Name], nil)
+					end
+				end)
+				Data.PlayerData.ChildRemoved:connect(function(v)
+					if game.PlayerDataService.storage[strid].data[v.Name] ~= nil then
+						game.PlayerDataService.storage[strid].Changed:fire(v.Name, nil, game.PlayerDataService.storage[strid].data[v.Name])
+					end
+					
+					game.PlayerDataService.storage[strid].data[v.Name] = nil
+				end)
+				
+				for _,v in pairs(Data.InternalData:GetChildren()) do
+					self.storage[strid].idata[v.Name] = game.FrameworkInternalService:Val2Var(v)
+					setupVal(v, true)
+				end
+				
+				for _,v in pairs(Data.PlayerData:GetChildren()) do
+					self.storage[strid].data[v.Name] = game.FrameworkInternalService:Val2Var(v)
+					setupVal(v)
+				end
+				
+				if game.Players:GetPlayerByUserId(id) then
+					self.storage[strid].player = game.Players:GetPlayerByUserId(id)
+				end
+				
+				local _self = self.storage[strid]
+				
+				function _self:Get(Key)
+					if not game.PlayerDataService.storage[strid] then
+						return warn("Cannot Get, save for " .. id .. " has been unloaded by the server.")
+					end
+					
+					return game.PlayerDataService.storage[strid].data[Key]
+				end
+				
+				function _self:iGet(Key)
+					if not game.PlayerDataService.storage[strid] then
+						return warn("Cannot iGet, save for " .. id .. " has been unloaded by the server.")
+					end
+					
+					return game.PlayerDataService.storage[strid].idata[Key]
+				end
+				
+				function _self:Set()
+					game.FrameworkService:LockServer(debug.traceback(), "Set")
+				end
+				
+				function _self:iSet()
+					game.FrameworkService:LockServer(debug.traceback(), "iSet")
+				end
+				
+				function _self:Update()
+					game.FrameworkService:LockServer(debug.traceback(), "Update")
+				end
+				
+				function _self:Save()
+					game.FrameworkService:LockServer(debug.traceback(), "Save")
+				end
+				
+				function _self:Delete()
+					game.FrameworkService:LockServer(debug.traceback(), "Delete")
+				end
+				
+				function _self:GetKeys()
+					if not game.PlayerDataService.storage[strid] then
+						return warn("Cannot GetKeys, save for " .. id .. " has been unloaded by the server.")
+					end
+					
+					local Keys = {}
+					for _,v in pairs(game.PlayerDataService.storage[strid].data) do
+						table.insert(Keys, _)
+					end
+					
+					return Keys
+				end
+				
+				function _self:GetPlayer()
+					if not game.PlayerDataService.storage[strid] then
+						return warn("Cannot GetPlayer, save for " .. id .. " has been unloaded by the server.")
+					end
+					
+					return game.PlayerDataService.storage[strid].player
+				end
+			end
+			
+			local Children = self.ClientDataReplicator:GetChildren()
+			self.ClientDataReplicator.ChildAdded:connect(function(Child)
+				ClientDataProfile(Child)
+			end)
+			self.ClientDataReplicator.ChildRemoved:connect(function(Child)
+				pcall(function() self.storage[Child.Name].Changed:disconnect() end)
+				pcall(function() self.storage[Child.Name].iChanged:disconnect() end)
+				self.storage[Child.Name] = nil
+			end)
+			
+			for _,v in pairs(Children) do
+				ClientDataProfile(v)
+			end
 		end
 		
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
@@ -134,6 +309,27 @@ return {"PlayerDataService", "PlayerDataService", {
 		self.storage[strid].Changed = LoadLibrary("RbxUtility"):CreateSignal()
 		self.storage[strid].iChanged = LoadLibrary("RbxUtility"):CreateSignal()
 		
+		local ClientDataProfile = Instance.new("Folder")
+		ClientDataProfile.Name = strid
+		local PlayerData = Instance.new("Folder", ClientDataProfile)
+		PlayerData.Name = "PlayerData"
+		local InternalData = Instance.new("Folder", ClientDataProfile)
+		InternalData.Name = "InternalData"
+		
+		for i,v in pairs(self.storage[strid].data) do
+			local x = game.FrameworkInternalService:Var2Val(v)
+			x.Name = i
+			x.Parent = PlayerData
+		end
+		
+		for i,v in pairs(self.storage[strid].idata) do
+			local x = game.FrameworkInternalService:Var2Val(v)
+			x.Name = i
+			x.Parent = InternalData
+		end
+		
+		ClientDataProfile.Parent = self.ClientDataReplicator
+		
 		if game.Players:GetPlayerByUserId(id) then
 			self.storage[strid].player = game.Players:GetPlayerByUserId(id)
 			
@@ -196,6 +392,14 @@ return {"PlayerDataService", "PlayerDataService", {
 			local old = game.PlayerDataService.storage[strid].data[Key]
 			if old == Value then return end
 			
+			if PlayerData:findFirstChild(Key) then
+				game.FrameworkInternalService:UpdateVal(PlayerData[Key], Value)
+			else
+				local x = game.FrameworkInternalService:Var2Val(Value)
+				x.Name = Key
+				x.Parent = PlayerData
+			end
+			
 			game.PlayerDataService.storage[strid].data[Key] = Value
 			touch(Key)
 			edit(Key)
@@ -220,6 +424,14 @@ return {"PlayerDataService", "PlayerDataService", {
 			
 			local old = game.PlayerDataService.storage[strid].idata[Key]
 			if old == Value then return end
+			
+			if InternalData:findFirstChild(Key) then
+				game.FrameworkInternalService:UpdateVal(InternalData[Key], Value)
+			else
+				local x = game.FrameworkInternalService:Var2Val(Value)
+				x.Name = Key
+				x.Parent = InternalData
+			end
 			
 			game.PlayerDataService.storage[strid].idata[Key] = Value
 			touch(Key, true)
@@ -300,6 +512,15 @@ return {"PlayerDataService", "PlayerDataService", {
 			touch()
 			
 			return Keys
+		end
+		
+		function _self:GetPlayer()
+			if not game.PlayerDataService.storage[strid] then
+				-- data has been unloaded but was cached as a variable, reload it
+				return game.PlayerDataService:LoadData(id, profile):GetPlayer()
+			end
+			
+			return game.PlayerDataService.storage[strid].player
 		end
 		
 		self.locked[strid] = false
@@ -431,14 +652,14 @@ return {"PlayerDataService", "PlayerDataService", {
 		
 		local strid = id .. "-" .. profile
 		if not self.storage[strid] then
-			if not self.locked[strid] then
+			if not self.locked[strid] and game:Is("Server") then
 				self:LoadData(player, profile)
 			end
 			
 			local n = os.time() + 5
 			repeat
 				wait()
-				if n <= os.time() then
+				if n <= os.time() and game:Is("Server") then
 					n = os.time() + 30
 					self:LoadData(player, profile)
 				end

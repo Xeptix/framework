@@ -364,7 +364,7 @@ ModifiedObjects = {
 			trace = function(class)
 				if APIDump[class] then
 					for _,v in pairs(APIDump[class]) do
-						if _:sub(1,2) == "2-" then
+						if _:sub(1,2) == "3-" then
 							pcall(function() Events[_:sub(3)] = self[_:sub(3)] end)
 						end
 					end
@@ -385,7 +385,7 @@ ModifiedObjects = {
 			trace = function(class)
 				if APIDump[class] then
 					for _,v in pairs(APIDump[class]) do
-						if _:sub(1,2) == "2-" then
+						if _:sub(1,2) == "4-" then
 							pcall(function() Callbacks[_:sub(3)] = self[_:sub(3)] end)
 						end
 					end
@@ -546,6 +546,7 @@ function Object(Obj)
 	
 	Modified.____o = Obj
 	Modified.____l = {}
+	Modified.____e = {}
 	
 	local NewObj
 	NewObj = setmetatable(Modified, {
@@ -564,8 +565,9 @@ function Object(Obj)
 				local o = rawget(self, "____o")
 				local value
 				
-				if o:FindFirstChild(index) then
-					return Object(o:FindFirstChild(index))
+				local ch = o:FindFirstChild(index)
+				if ch then
+					return Object(ch)
 				end
 				
 				if not pcall(function()
@@ -603,6 +605,8 @@ function Object(Obj)
 						end
 					elseif typeof(value) == "Instance" then
 						value = Object(value)
+					elseif typeof(value) == "RBXScriptSignal" then
+						value = self.____e[index] or value
 					end
 				end) then
 					ferror(debug.traceback(), index .. " is not a valid member of " .. self.ClassName, 0)
@@ -667,10 +671,74 @@ function Object(Obj)
 	Obj.Changed:connect(function()
 		if not Obj.Parent then
 			ObjCache[Obj] = nil
+			pcall(function()
+				for _,v in pairs(rawget(NewObj, "____e")) do v:softdisconnect() end
+			end)
 		elseif Obj.Parent and not ObjCache[Obj] then
 			ObjCache[Obj] = NewObj
 		end
 	end)
+	
+	--if NewObj.ClassName ~= "DataModel" then
+		for _,v in pairs(NewObj:GetEvents()) do -- hacky event stuff yay!!!
+			pcall(function()
+				if typeof(NewObj[_]) == "RBXScriptSignal" then
+					local rbx = NewObj[_]
+					local signal = RbxUtility:CreateSignal()
+					local c = signal.connect;
+					local first
+					local hah = {}
+					function signal:connect(f)
+						local rc = rbx:connect(function(...)
+							local hax = {...}
+							for hi,mate in pairs(hax) do
+								if typeof(mate) == "Instance" then
+									hax[hi] = Object(mate)
+								end
+							end
+							
+							f(unpack(hax))
+						end)
+						
+						hah[f] = rc
+						
+						return rc
+					end
+					function signal:Connect(f)
+						return signal:connect(f)
+					end
+					function signal:Fire(...)
+						return signal:fire(...)
+					end
+					function signal:Disconnect()
+						return signal:disconnect()
+					end
+					function signal:fire(...)
+						for _,v in pairs(hah) do
+							if _ and v and v.Connected then
+								_(...)
+							else
+								hah[_] = nil
+							end
+						end
+					end
+					function signal:disconnect()
+						for _,v in pairs(hah) do
+							if _ and v and v.Connected then
+								v:disconnect()
+							else
+								hah[_] = nil
+							end
+						end
+					end
+					function signal:softdisconnect()
+						hah = {}
+					end
+					rawget(NewObj, "____e")[_] = signal
+				end
+			end)
+		end
+	--end
 	
 	ObjCache[Obj] = NewObj
 	return NewObj
@@ -810,7 +878,7 @@ string = NewMeta(Original.string, {
 	   FrameworkService:CheckArgument(debug.traceback(), nil, 2, delim, "string")
 	   FrameworkService:CheckArgument(debug.traceback(), nil, 3, maxNb, {"number", "nil"})
 	   
-	   str = "%" .. str
+	   delim = "%" .. delim
 	    -- Eliminate bad cases...
 	   if string.find(str, delim) == nil then
 	      return { str }
