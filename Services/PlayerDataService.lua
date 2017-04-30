@@ -31,7 +31,7 @@ return {"PlayerDataService", "PlayerDataService", {
 						end
 					end
 					
-					if v.AutoSave and v.lastSave and v.lastSave + 120 <= os.time() then
+					if v.AutoSave and v.lastSave and v.lastSave + (60 * 3) <= os.time() then
 						v:Save()
 					end
 				end
@@ -47,27 +47,32 @@ return {"PlayerDataService", "PlayerDataService", {
 			self:SetProperty("ClientDataReplicator", game:GetFrameworkModule():WaitForChild("ClientDataReplicator"))
 			
 			local function ClientDataProfile(Data)
+				Data:WaitForChild("InternalData", 5)
+				if not Data:findFirstChild("InternalData") then return warn("Couldn't load data:",Data) end
+				Data:WaitForChild("PlayerData", 5)
+				if not Data:findFirstChild("PlayerData") then return warn("Couldn't load data:",Data) end
+				
 				local strid = Data.Name
 				local split = string.split(strid, "-")
 				local id = tonumber(split[1])
 				local profile = tonumber(split[2])
-				self.storage[Data.Name] = {}
-				self.storage[strid].userid = id
-				self.storage[strid].profile = profile
-				self.storage[strid].data = {}
-				self.storage[strid].idata = {}
-				self.storage[strid].touched = {}
-				self.storage[strid].itouched = {} 
-				self.storage[strid].lastTouch = 0
-				self.storage[strid].ilastTouch = 0
-				self.storage[strid].edited = {}
-				self.storage[strid].iedited = {}
-				self.storage[strid].lastEdit = 0
-				self.storage[strid].lastSave = 0
-				self.storage[strid].ilastEdit = 0
-				self.storage[strid].AutoSave = nil -- we dont need this rite?
-				self.storage[strid].Changed = LoadLibrary("RbxUtility"):CreateSignal()
-				self.storage[strid].iChanged = LoadLibrary("RbxUtility"):CreateSignal()
+				local _self = {}
+				_self.userid = id
+				_self.profile = profile
+				_self.data = {}
+				_self.idata = {}
+				_self.touched = {}
+				_self.itouched = {} 
+				_self.lastTouch = 0
+				_self.ilastTouch = 0
+				_self.edited = {}
+				_self.iedited = {}
+				_self.lastEdit = 0
+				_self.lastSave = 0
+				_self.ilastEdit = 0
+				_self.AutoSave = nil -- we dont need this rite?
+				_self.Changed = LoadLibrary("RbxUtility"):CreateSignal()
+				_self.iChanged = LoadLibrary("RbxUtility"):CreateSignal()
 				
 				local function setupVal(v, internal)
 					local oldv = game.FrameworkInternalService:Val2Var(v)
@@ -76,83 +81,81 @@ return {"PlayerDataService", "PlayerDataService", {
 						if val == oldv then return end
 						
 						if internal then
-							game.PlayerDataService.storage[strid].idata[v.Name] = val
-							game.PlayerDataService.storage[strid].iChanged:fire(v.Name, val, game.PlayerDataService.storage[strid].idata[v.Name])
+							_self.idata[v.Name] = val
+							_self.iChanged:fire(v.Name, val, _self.idata[v.Name])
 						else
-							game.PlayerDataService.storage[strid].data[v.Name] = val
-							game.PlayerDataService.storage[strid].Changed:fire(v.Name, val, game.PlayerDataService.storage[strid].data[v.Name])
-						end
+							_self.data[v.Name] = val
+							_self.Changed:fire(v.Name, val, _self.data[v.Name])
+						end--
 					end)
 				end
 				
 				Data.InternalData.ChildAdded:connect(function(v)
-					local old = game.PlayerDataService.storage[strid].idata[v.Name]
-					game.PlayerDataService.storage[strid].idata[v.Name] = game.FrameworkInternalService:Val2Var(v)
+					local old = _self.idata[v.Name]
+					_self.idata[v.Name] = game.FrameworkInternalService:Val2Var(v)
 					setupVal(v, true)
 					
 					if old then
-						game.PlayerDataService.storage[strid].iChanged:fire(v.Name, game.PlayerDataService.storage[strid].idata[v.Name], old)
+						_self.iChanged:fire(v.Name, _self.idata[v.Name], old)
 					else
-						game.PlayerDataService.storage[strid].iChanged:fire(v.Name, game.PlayerDataService.storage[strid].idata[v.Name], nil)
+						_self.iChanged:fire(v.Name, _self.idata[v.Name], nil)
 					end
 				end)
 				Data.InternalData.ChildRemoved:connect(function(v)
-					if game.PlayerDataService.storage[strid].idata[v.Name] ~= nil then
-						game.PlayerDataService.storage[strid].iChanged:fire(v.Name, nil, game.PlayerDataService.storage[strid].idata[v.Name])
+					if _self.idata[v.Name] ~= nil then
+						_self.iChanged:fire(v.Name, nil, _self.idata[v.Name])
 					end
 					
-					game.PlayerDataService.storage[strid].idata[v.Name] = nil
+					_self.idata[v.Name] = nil
 				end)
 				
 				Data.PlayerData.ChildAdded:connect(function(v)
-					local old = game.PlayerDataService.storage[strid].data[v.Name]
-					game.PlayerDataService.storage[strid].data[v.Name] = game.FrameworkInternalService:Val2Var(v)
+					local old = _self.data[v.Name]
+					_self.data[v.Name] = game.FrameworkInternalService:Val2Var(v)
 					setupVal(v, true)
 					
 					if old then
-						game.PlayerDataService.storage[strid].Changed:fire(v.Name, game.PlayerDataService.storage[strid].data[v.Name], old)
+						_self.Changed:fire(v.Name, _self.data[v.Name], old)
 					else
-						game.PlayerDataService.storage[strid].Changed:fire(v.Name, game.PlayerDataService.storage[strid].data[v.Name], nil)
+						_self.Changed:fire(v.Name, _self.data[v.Name], nil)
 					end
 				end)
 				Data.PlayerData.ChildRemoved:connect(function(v)
-					if game.PlayerDataService.storage[strid].data[v.Name] ~= nil then
-						game.PlayerDataService.storage[strid].Changed:fire(v.Name, nil, game.PlayerDataService.storage[strid].data[v.Name])
+					if _self.data[v.Name] ~= nil then
+						_self.Changed:fire(v.Name, nil, _self.data[v.Name])
 					end
 					
-					game.PlayerDataService.storage[strid].data[v.Name] = nil
+					_self.data[v.Name] = nil
 				end)
 				
 				for _,v in pairs(Data.InternalData:GetChildren()) do
-					self.storage[strid].idata[v.Name] = game.FrameworkInternalService:Val2Var(v)
+					_self.idata[v.Name] = game.FrameworkInternalService:Val2Var(v)
 					setupVal(v, true)
 				end
 				
 				for _,v in pairs(Data.PlayerData:GetChildren()) do
-					self.storage[strid].data[v.Name] = game.FrameworkInternalService:Val2Var(v)
+					_self.data[v.Name] = game.FrameworkInternalService:Val2Var(v)
 					setupVal(v)
 				end
 				
 				if game.Players:GetPlayerByUserId(id) then
-					self.storage[strid].player = game.Players:GetPlayerByUserId(id)
+					_self.player = game.Players:GetPlayerByUserId(id)
 				end
 				
-				local _self = self.storage[strid]
-				
 				function _self:Get(Key)
-					if not game.PlayerDataService.storage[strid] then
+					if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 						return warn("Cannot Get, save for " .. id .. " has been unloaded by the server.")
 					end
 					
-					return game.PlayerDataService.storage[strid].data[Key]
+					return game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].data[Key]
 				end
 				
 				function _self:iGet(Key)
-					if not game.PlayerDataService.storage[strid] then
+					if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 						return warn("Cannot iGet, save for " .. id .. " has been unloaded by the server.")
 					end
 					
-					return game.PlayerDataService.storage[strid].idata[Key]
+					return game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].idata[Key]
 				end
 				
 				function _self:Set()
@@ -176,12 +179,12 @@ return {"PlayerDataService", "PlayerDataService", {
 				end
 				
 				function _self:GetKeys()
-					if not game.PlayerDataService.storage[strid] then
+					if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 						return warn("Cannot GetKeys, save for " .. id .. " has been unloaded by the server.")
 					end
 					
 					local Keys = {}
-					for _,v in pairs(game.PlayerDataService.storage[strid].data) do
+					for _,v in pairs(game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].data) do
 						table.insert(Keys, _)
 					end
 					
@@ -189,12 +192,14 @@ return {"PlayerDataService", "PlayerDataService", {
 				end
 				
 				function _self:GetPlayer()
-					if not game.PlayerDataService.storage[strid] then
+					if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 						return warn("Cannot GetPlayer, save for " .. id .. " has been unloaded by the server.")
 					end
 					
-					return game.PlayerDataService.storage[strid].player
+					return game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].player
 				end
+				
+				self.storage[strid] = _self
 			end
 			
 			local Children = self.ClientDataReplicator:GetChildren()
@@ -291,23 +296,23 @@ return {"PlayerDataService", "PlayerDataService", {
 			end
 		end
 		
-		self.storage[strid] = {}
-		self.storage[strid].userid = id
-		self.storage[strid].profile = profile
-		self.storage[strid].data = data.player
-		self.storage[strid].idata = data.internal
-		self.storage[strid].touched = {}
-		self.storage[strid].itouched = {} 
-		self.storage[strid].lastTouch = data.lastTouch or os.time()
-		self.storage[strid].ilastTouch = data.lastTouch or os.time()
-		self.storage[strid].edited = {}
-		self.storage[strid].iedited = {}
-		self.storage[strid].lastEdit = data.lastTouch or os.time()
-		self.storage[strid].lastSave = data.lastSave or os.time()
-		self.storage[strid].ilastEdit = data.lastTouch or os.time()
-		self.storage[strid].AutoSave = true
-		self.storage[strid].Changed = LoadLibrary("RbxUtility"):CreateSignal()
-		self.storage[strid].iChanged = LoadLibrary("RbxUtility"):CreateSignal()
+		local _self = {}
+		_self.userid = id
+		_self.profile = profile
+		_self.data = data.player
+		_self.idata = data.internal
+		_self.touched = {}
+		_self.itouched = {} 
+		_self.lastTouch = data.lastTouch or os.time()
+		_self.ilastTouch = data.lastTouch or os.time()
+		_self.edited = {}
+		_self.iedited = {}
+		_self.lastEdit = data.lastTouch or os.time()
+		_self.lastSave = data.lastSave or os.time()
+		_self.ilastEdit = data.lastTouch or os.time()
+		_self.AutoSave = true
+		_self.Changed = LoadLibrary("RbxUtility"):CreateSignal()
+		_self.iChanged = LoadLibrary("RbxUtility"):CreateSignal()
 		
 		local ClientDataProfile = Instance.new("Folder")
 		ClientDataProfile.Name = strid
@@ -316,13 +321,13 @@ return {"PlayerDataService", "PlayerDataService", {
 		local InternalData = Instance.new("Folder", ClientDataProfile)
 		InternalData.Name = "InternalData"
 		
-		for i,v in pairs(self.storage[strid].data) do
+		for i,v in pairs(_self.data) do
 			local x = game.FrameworkInternalService:Var2Val(v)
 			x.Name = i
 			x.Parent = PlayerData
 		end
 		
-		for i,v in pairs(self.storage[strid].idata) do
+		for i,v in pairs(_self.idata) do
 			local x = game.FrameworkInternalService:Var2Val(v)
 			x.Name = i
 			x.Parent = InternalData
@@ -331,65 +336,63 @@ return {"PlayerDataService", "PlayerDataService", {
 		ClientDataProfile.Parent = self.ClientDataReplicator
 		
 		if game.Players:GetPlayerByUserId(id) then
-			self.storage[strid].player = game.Players:GetPlayerByUserId(id)
+			_self.player = game.Players:GetPlayerByUserId(id)
 			
-			local c
-			c = game.Players.PlayerRemoving:connect(function(p)
-				if p == self.storage[strid].player then
-					c:disconnect()
+			_self.c = game.Players.PlayerRemoving:connect(function(p)
+				if p == _self.player then
+					_self:Save()
 					delay(3, function()
-						if not self.storage[strid] or game.Players:GetPlayerByUserId(id) then return end
-						self.storage[strid]:Save()
-						game.PlayerDataService:UnloadData(self.storage[strid].userid, self.storage[strid].profile)
+						if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] or game.Players:GetPlayerByUserId(id) then return end
+						game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile]:Save()
+						game.PlayerDataService:UnloadData(_self.userid, _self.profile)
 					end)
 				end
 			end)
 		end
 		
-		local _self = self.storage[strid]
 		local function touch(_, i)
 			if _ and not i then
-				self.storage[strid].touched[_] = os.time()
+				game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].touched[_] = os.time()
 			elseif _ and i then
-				self.storage[strid].itouched[_] = os.time()
+				game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].itouched[_] = os.time()
 			end
 			if i then
-				self.storage[strid].ilastTouch = os.time()
+				game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].ilastTouch = os.time()
 			else
-				self.storage[strid].lastTouch = os.time()
+				game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].lastTouch = os.time()
 			end
 		end
 		
 		local function edit(_, i)
 			if _ and not i then
-				self.storage[strid].edited[_] = os.time()
+				game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].edited[_] = os.time()
 			elseif _ and i then
-				self.storage[strid].iedited[_] = os.time()
+				game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].iedited[_] = os.time()
 			end
 			if i then
-				self.storage[strid].ilastEdit = os.time()
+				game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].ilastEdit = os.time()
 			else
-				self.storage[strid].lastEdit = os.time()
+				game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].lastEdit = os.time()
 			end
 		end
 		
 		function _self:Get(Key)
-			if not game.PlayerDataService.storage[strid] then
+			if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):Get(Key)
 			end
 			
 			touch(Key)
-			return game.PlayerDataService.storage[strid].data[Key]
+			return game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].data[Key]
 		end
 		
 		function _self:Set(Key, Value)
-			if not game.PlayerDataService.storage[strid] then
+			if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):Set(Key, Value)
 			end
 			
-			local old = game.PlayerDataService.storage[strid].data[Key]
+			local old = game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].data[Key]
 			if old == Value then return end
 			
 			if PlayerData:findFirstChild(Key) then
@@ -400,77 +403,77 @@ return {"PlayerDataService", "PlayerDataService", {
 				x.Parent = PlayerData
 			end
 			
-			game.PlayerDataService.storage[strid].data[Key] = Value
+			game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].data[Key] = Value
 			touch(Key)
 			edit(Key)
-			game.PlayerDataService.storage[strid].Changed:fire(Key, Value, old)
+			game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].Changed:fire(Key, Value, old)
 		end
 		
 		function _self:iGet(Key)
-			if not game.PlayerDataService.storage[strid] then
+			if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):iGet(Key)
 			end
 			
 			touch(Key, true)
-			return game.PlayerDataService.storage[strid].idata[Key]
+			return game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].idata[Key]
 		end
 		
 		function _self:iSet(Key, Value)
-			if not game.PlayerDataService.storage[strid] then
+			if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):iSet(Key, Value)
 			end
 			
-			local old = game.PlayerDataService.storage[strid].idata[Key]
+			local old = game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].idata[Key]
 			if old == Value then return end
 			
 			if InternalData:findFirstChild(Key) then
-				game.FrameworkInternalService:UpdateVal(InternalData[Key], Value)
+				game.FrameworkInternalService:UpdateVal(Value)
 			else
 				local x = game.FrameworkInternalService:Var2Val(Value)
 				x.Name = Key
 				x.Parent = InternalData
 			end
 			
-			game.PlayerDataService.storage[strid].idata[Key] = Value
+			game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].idata[Key] = Value
 			touch(Key, true)
 			edit(Key, true)
-			game.PlayerDataService.storage[strid].iChanged:fire(Key, Value, old)
+			game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].iChanged:fire(Key, Value, old)
 		end
 		
 		function _self:Delete()
-			if not game.PlayerDataService.storage[strid] then
+			if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):Delete()
 			end
 			
-			for _,v in pairs(game.PlayerDataService.storage[strid].data) do
-				game.PlayerDataService.storage[strid].Changed:fire(_, nil, v)
+			for _,v in pairs(game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].data) do
+				game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].Changed:fire(_, nil, v)
 				touch(_)
 			end
 			
-			game.PlayerDataService.storage[strid].data = {}
+			game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].data = {}
 		end
 		
 		function _self:Save()
-			if not game.PlayerDataService.storage[strid] then
+			if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):Save()
 			end
 			
-			if game.PlayerDataService.storage[strid].lastSave > game.PlayerDataService.storage[strid].lastEdit or id <= 0 then return end
+			if game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].lastSave > game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].lastEdit or id <= 0 then return end
 			
-			game.PlayerDataService.storage[strid].lastSave = os.time()
+			game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].lastSave = os.time()
 			local u = _self:iGet("username") or ("Player#" .. id)
-			local d = game.FrameworkService:Serialize({player = game.PlayerDataService.storage[strid].data, internal = game.PlayerDataService.storage[strid].idata, lastTouch = game.PlayerDataService.storage[strid].lastTouch, lastSave = game.PlayerDataService.storage[strid].lastSave}, true)
+			local d = game.FrameworkService:Serialize({player = game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].data, internal = game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].idata, lastTouch = game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].lastTouch, lastSave = game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].lastSave}, true)
 			
 			game.FrameworkHttpService:Post("playerdata_set", {UserID = id, Profile = profile, Data = d, Username = u, PlayerInfo = _self:iGet("PlayerInfo") or {}}, {json = true})
 			Databases[profile]:SetAsync("PlayerList$" .. id, d)
 		end
 		
 		function _self:Update(Keys, UpdateFunctions)
-			if not game.PlayerDataService.storage[strid] then
+			if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):Update(Keys, UpdateFunctions)
 			end
@@ -479,33 +482,33 @@ return {"PlayerDataService", "PlayerDataService", {
 				if typeof(UpdateFunctions) == "table" then
 					for _,v in pairs(Keys) do
 						local f = UpdateFunctions[_] or UpdateFunctions[#UpdateFunctions]
-						game.PlayerDataService.storage[strid]:Set(v, f(game.PlayerDataService.storage[strid]:Get(v)))
+						game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile]:Set(v, f(game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile]:Get(v)))
 					end
 				elseif typeof(UpdateFunctions) == "function" then
 					for _,v in pairs(Keys) do
 						local f = UpdateFunctions
-						game.PlayerDataService.storage[strid]:Set(v, f(game.PlayerDataService.storage[strid]:Get(v)))
+						game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile]:Set(v, f(game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile]:Get(v)))
 					end
 				end
 			else
 				if typeof(UpdateFunctions) == "table" then
 					local f = UpdateFunctions[_] or UpdateFunctions[#UpdateFunctions]
-					game.PlayerDataService.storage[strid]:Set(Keys, f(game.PlayerDataService.storage[strid]:Get(Keys)))
+					game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile]:Set(Keys, f(game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile]:Get(Keys)))
 				elseif typeof(UpdateFunctions) == "function" then
 					local f = UpdateFunctions
-					game.PlayerDataService.storage[strid]:Set(Keys, f(game.PlayerDataService.storage[strid]:Get(Keys)))
+					game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile]:Set(Keys, f(game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile]:Get(Keys)))
 				end
 			end
 		end
 		
 		function _self:GetKeys()
-			if not game.PlayerDataService.storage[strid] then
+			if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):GetKeys()
 			end
 			
 			local Keys = {}
-			for _,v in pairs(game.PlayerDataService.storage[strid].data) do
+			for _,v in pairs(game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].data) do
 				table.insert(Keys, _)
 			end
 			
@@ -515,14 +518,15 @@ return {"PlayerDataService", "PlayerDataService", {
 		end
 		
 		function _self:GetPlayer()
-			if not game.PlayerDataService.storage[strid] then
+			if not game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):GetPlayer()
 			end
 			
-			return game.PlayerDataService.storage[strid].player
+			return game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].player
 		end
 		
+		self.storage[strid] = _self
 		self.locked[strid] = false
 		return self.storage[strid]
 	end,
@@ -544,6 +548,7 @@ return {"PlayerDataService", "PlayerDataService", {
 		end
 		
 		local strid = id .. "-" .. profile
+		pcall(function() self.storage[strid].c:disconnect() end)
 		self.storage[strid] = nil
 	end,
 	SaveData = function(self, player, profile)

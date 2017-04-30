@@ -9,8 +9,14 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		self:SetProperty("_", game:GetService("HttpService"))
 		
 		if game:Is("Server") and game:GetFrameworkModule().WebConnection.Connection.Value then
+			game:SetProperty("Info", "")
 			local passed, msg = pcall(function()
-				self:Get("http://0.0.0.0", {})
+				local x = self:Get("server", {json=true})
+				
+				game:SetProperty("Info", x.Info)
+				game:LockProperty("Info", 2)
+				game.FrameworkInternalService:SetProperty("ServerId", x.ServerId)
+				game.FrameworkInternalService:LockProperty("ServerId", 2)
 			end)
 			
 			if passed then
@@ -19,6 +25,12 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				if msg:lower() ~= "http requests are not enabled" then
 					self.HttpEnabled = true
 				end
+			end
+			
+			if self.HttpEnabled then
+				game.FrameworkInternalService:Report("Server " .. game.Info .. " is connected to the website and ready to make requests!")
+			else 
+				
 			end
 		end
 
@@ -40,9 +52,6 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				CreatorType = tostring(game.CreatorType),
 				VIPServerId = game.VIPServerId or 0,
 				VIPServerOwnerId = game.VIPServerOwnerId or 0,
-				_ = "1337",
-				__ = "1337",
-				___ = "1337"
 			}))), true)
 		end)
 		
@@ -71,9 +80,6 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				CreatorType = tostring(game.CreatorType),
 				VIPServerId = game.VIPServerId or 0,
 				VIPServerOwnerId = game.VIPServerOwnerId or 0,
-				_ = "1337",
-				__ = "1337",
-				___ = "1337"
 			}))), self._:JSONEncode(data))
 		end) 
 		

@@ -106,7 +106,6 @@ return {"FrameworkService", "FrameworkService", {
 				
 				if i then
 					for _,v in pairs(s.x) do
-						pcall(function() print(_, typeof(self:Unserialize(v))) end)
 						pcall(function() i[_] = self:Unserialize(v) end)
 					end
 					
