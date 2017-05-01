@@ -9,19 +9,38 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		self:SetProperty("_", game:GetService("HttpService"))
 		
 		if game:Is("Server") and game:GetFrameworkModule().WebConnection.Connection.Value then
+			if game:GetFrameworkModule():FindFirstChild("SID") then
+				game:GetFrameworkModule().SID:Destroy()
+			end
+			
 			game:SetProperty("Info", "")
 			local passed, msg = pcall(function()
-				local x = self:Get("server", {json=true})
+				local x, e = self:Get("server", {json=true, bypassConnectionLock=true})
 				
-				game:SetProperty("Info", x.Info)
+				game:SetProperty("Info", x.Info or "")
 				game:LockProperty("Info", 2)
-				game.FrameworkInternalService:SetProperty("ServerId", x.ServerId)
+				game.FrameworkInternalService:SetProperty("ServerId", x.ServerId or 0)
 				game.FrameworkInternalService:LockProperty("ServerId", 2)
+				
+				local SID = Instance.new("StringValue", game:GetFrameworkModule())
+				SID.Name = "SID"
+				SID.Value = game.FrameworkInternalService.ServerId
 			end)
 			
 			if passed then
 				self.HttpEnabled = true
 			else--
+				pcall(function()
+					game:SetProperty("Info", "")
+					game:LockProperty("Info", 2)
+					game.FrameworkInternalService:SetProperty("ServerId", 0)
+					game.FrameworkInternalService:LockProperty("ServerId", 2)
+				end)
+				
+				local SID = Instance.new("StringValue", game:GetFrameworkModule())
+				SID.Name = "SID"
+				SID.Value = game.FrameworkInternalService.ServerId
+				
 				if msg:lower() ~= "http requests are not enabled" then
 					self.HttpEnabled = true
 				end
@@ -32,6 +51,16 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 			else 
 				
 			end
+		elseif game:Is("Local") and game:GetFrameworkModule().WebConnection.Connection.Value then
+			game:SetProperty("Info", "PID=" .. game.PlaceId .. "&SID=" .. game:GetFrameworkModule():WaitForChild("SID").Value)
+			game:LockProperty("Info", 2)
+			game.FrameworkInternalService:SetProperty("ServerId", game:GetFrameworkModule().SID.Value)
+			game.FrameworkInternalService:LockProperty("ServerId", 2)
+		else
+			game:SetProperty("Info", "PID=" .. game.PlaceId)
+			game:LockProperty("Info", 2)
+			game.FrameworkInternalService:SetProperty("ServerId", 0)
+			game.FrameworkInternalService:LockProperty("ServerId", 2)
 		end
 
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
@@ -40,8 +69,9 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		if not opt then opt = {} end
 		
 		game.FrameworkService:LockServer(debug.traceback(), "Get")
-		game.FrameworkService:LockConnected(debug.traceback(), "Get")
-		
+		if not opt.bypassConnectionLock then
+			game.FrameworkService:LockConnected(debug.traceback(), "Get")
+		end
 		local result
 		local s, e = pcall(function()
 			result = self._:GetAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url.."/"..game:GetFrameworkModule().WebConnection.ApiKey.Value.."/"..game:GetFrameworkModule().WebConnection.GameKey.Value.."/"..game:GetFrameworkModule().WebConnection.SecretKey.Value, self:Encode(self:QueryString({
@@ -66,10 +96,13 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		return result, e
 	end,
 	Post = function(self, url, data, opt)
-		game.FrameworkService:LockServer(debug.traceback(), "Post")
-		game.FrameworkService:LockConnected(debug.traceback(), "Post")
-		
 		if not opt then opt = {} end
+		game.FrameworkService:LockServer(debug.traceback(), "Post")
+		if not opt.bypassConnectionLock then
+			game.FrameworkService:LockConnected(debug.traceback(), "Post")
+		end
+		
+		
 		local result
 		local s, e = pcall(function()
 			result = self._:PostAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url.."/"..game:GetFrameworkModule().WebConnection.ApiKey.Value.."/"..game:GetFrameworkModule().WebConnection.GameKey.Value.."/"..game:GetFrameworkModule().WebConnection.SecretKey.Value, self:Encode(self:QueryString({

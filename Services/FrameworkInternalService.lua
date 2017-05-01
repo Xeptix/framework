@@ -10,7 +10,7 @@ return {"FrameworkInternalService", "FrameworkInternalService", {
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
 	end,
 	GatherIdentifyableInformation = function(self)
-		return (game.PlaceId or "0") .. "; " .. self.ServerId .. "[" .. (game.JobId or "0") .. "]" .. (game.CreatorId or "0") .. "[" .. tostring(game.CreatorType) .. "]" .. (game.VIPServerId or 0) .. "[" .. (game.VIPServerOwnerId or 0) .. "]"
+		return (game.PlaceId or "0") .. "; " .. self.ServerId .. "[" .. (game.JobId or "0") .. "]" .. (game.CreatorId or "0") .. "[" .. tostring(game.CreatorType) .. "]" .. (game:Is("Server") and ((game.VIPServerId or 0) .. "[" .. (game.VIPServerOwnerId or 0) .. "]") or "")
 	end,
 	Report = function(self, message)
 		game:GetService("FrameworkHttpService"):Post("report", {message = message}, {})

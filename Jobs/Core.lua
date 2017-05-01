@@ -10,7 +10,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 	local FrameworkHttpService = game:GetService("FrameworkHttpService")
 	local FrameworkModule = game:GetFrameworkModule()
 	
-	game:SetProperty("Info", "")
+	--game:SetProperty("Info", "")
 	game:LockProperty("Name", 2)
 	
 	if FrameworkModule.WebConnection.Connection.Value and FrameworkHttpService.HttpEnabled then
