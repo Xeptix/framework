@@ -627,8 +627,23 @@ function Object(Obj)
 		__newindex = function(self, index, value)
 			if rawget(self, "____c")[index] then
 				if rawget(self, "____o"):IsA("MarketplaceService") and index:lower() == "processreceipt" then
-					rawget(self, "____o")[index] = function(Receipt)
-						--todo
+					local ms = rawget(self, "____o")
+					local oms = self
+					if rawget(self, "_receipts") then
+						table.insert(rawget(self, "_receipts"), value)
+					else
+						rawset(self, "_receipts", {value})
+						ms[index] = function(Receipt)
+							local Decision = Enum.ProductPurchaseDecision.PurchaseGranted
+							for _,v in pairs(oms._receipts) do
+								local r = v(Receipt)
+								if r ~= Enum.ProductPurchaseDecision.PurchaseGranted and r ~= "framework.internal" then
+									Decision = Enum.ProductPurchaseDecision.NotProcessedYet
+								end
+							end
+							
+							return Decision
+						end
 					end
 				else
 					rawget(self, "____o")[index] = function(...)

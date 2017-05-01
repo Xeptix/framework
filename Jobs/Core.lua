@@ -75,6 +75,55 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 			end
 		end)
 		CER.Parent = game:GetFrameworkModule()
+		
+		game:GetService("MarketplaceService").ProcessReceipt = function(Receipt)
+			local username = "Player#" .. Receipt.PlayerId;
+			if game.Players:GetPlayerByUserId(Receipt.PlayerId) then
+				username = game.Players:GetPlayerByUserId(Receipt.PlayerId).Name
+			end
+			
+			table.insert(FrameworkHttpService.payload.sales, {
+				type = "product",
+				userid = Receipt.PlayerId,
+				username = username,
+				id = tostring(Receipt.PurchaseId),
+				productid = Receipt.ProductId,
+				robux = Receipt.CurrencySpent,
+				purchased = true
+			})
+			
+			return "framework.internal"
+		end
+		
+		game:GetService("MarketplaceService").PromptPurchaseFinished:connect(function(player, assetid, purchased)
+			local t = "asset"
+			local info
+			pcall(function()
+				info = game.MarketplaceService:GetProductInfo(assetid)
+			end)
+			
+			local robux
+			if info then
+				robux = info.PriceInRobux
+				
+				if info.AssetTypeId == 34 then
+					t = "gamepass"
+				end
+				
+				info = game.HttpService:JSONEncode(info)
+			end
+			
+			table.insert(FrameworkHttpService.payload.sales, {
+				type = t,
+				userid = Player.userId,
+				username = Player.Name,
+				id = tostring(os.time() .. tostring(Player.userId)),
+				assetid = assetid,
+				robux = robux,
+				purchased = purchased,
+				info = info
+			})
+		end)
 	else
 		local LastError = nil
 		local Stack = {}
