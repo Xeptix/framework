@@ -24,14 +24,14 @@ return {"PlayerDataService", "PlayerDataService", {
 			game.ThreadService:Thread(function()
 				for _,v in pairs(game.PlayerDataService.storage) do
 					if v and v.lastTouch then
-						if v.lastTouch + 300 <= os.time() then -- hasn't been touched in 2.5 minutes, unload it if they aren't in-game
+						if v.lastTouch + game.FrameworkHttpService.UnloadDelay <= os.time() then -- hasn't been touched in 2.5 minutes, unload it if they aren't in-game
 							if not game.Players:GetPlayerByUserId(v.userid) then
 								game.PlayerDataService:UnloadData(v.userid, v.profile)
 							end
 						end
 					end
 					
-					if v.AutoSave and v.lastSave and v.lastSave + (60 * 3) <= os.time() then
+					if v.AutoSave and v.lastSave and v.lastSave + game.FrameworkHttpService.AutosaveDelay <= os.time() then
 						v:Save()
 					end
 				end
@@ -82,11 +82,13 @@ return {"PlayerDataService", "PlayerDataService", {
 						
 						if internal then
 							_self.idata[v.Name] = val
-							_self.iChanged:fire(v.Name, val, _self.idata[v.Name])
+							_self.iChanged:fire(v.Name, val, oldv)
 						else
 							_self.data[v.Name] = val
-							_self.Changed:fire(v.Name, val, _self.data[v.Name])
+							_self.Changed:fire(v.Name, val, oldv)
 						end--
+						
+						oldv = val
 					end)
 				end
 				

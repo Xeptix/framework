@@ -306,14 +306,19 @@ ModifiedObjects = {
 			end
 			
 			if lockMode < 1 or lockMode > 3 then ferror(debug.traceback(), "Argument #2 to 'LockProperty' must be a number from 1 to 3", 0) end
-			if rawget(self, "____l")[name .. "____l" .. lockMode] then
+			if rawget(self, "____l")[name .. "____l" .. lockMode] ~= nil then
 				local LType = {"Reading","Writing","Reading and Writing"}
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), LType[lockMode] .. " property '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is already locked!", 0)
 			end
 			
 			local x;pcall(function()x=rawget(self, "____o")[name]end);
-			rawget(self, "____l")[name .. "____l" .. lockMode] = rawget(self, "____l")[name .. "____l" .. lockMode] or rawget(self, name) or x
+			if rawget(self, name) == false or x == false or rawget(self, "____l")[name .. "____l" .. lockMode] == false then
+				rawget(self, "____l")[name .. "____l" .. lockMode] = false
+			else
+				rawget(self, "____l")[name .. "____l" .. lockMode] = rawget(self, "____l")[name .. "____l" .. lockMode] or rawget(self, name) or x
+			end
+			
 			rawset(self, name, nil)
 		end,
 		GetProperties = function(self)
@@ -386,7 +391,7 @@ ModifiedObjects = {
 				if APIDump[class] then
 					for _,v in pairs(APIDump[class]) do
 						if _:sub(1,2) == "4-" then
-							pcall(function() Callbacks[_:sub(3)] = self[_:sub(3)] end)
+							pcall(function() Callbacks[_:sub(3)] = true end)
 						end
 					end
 					
@@ -414,7 +419,7 @@ ModifiedObjects = {
 			elseif FrameworkModule.Services:findFirstChild(ServiceName) then
 				return LoadService(ServiceName)
 			else
-				return rawget(self, "____o"):GetService(ServiceName)
+				return Object(rawget(self, "____o"):GetService(ServiceName))
 			end
 		end,
 		FindService = function(self, ServiceName)
@@ -547,6 +552,7 @@ function Object(Obj)
 	Modified.____o = Obj
 	Modified.____l = {}
 	Modified.____e = {}
+	Modified.____c = {}
 	
 	local NewObj
 	NewObj = setmetatable(Modified, {
@@ -554,7 +560,7 @@ function Object(Obj)
 			if rawget(self, "____l")[index .. "____l1"] or rawget(self, "____l")[index .. "____l3"] and index ~= "GetFullName" then
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Reading is not allowed!", 0)
-			elseif rawget(self, "____l")[index .. "____l2"] then
+			elseif rawget(self, "____l")[index .. "____l2"] ~= nil then
 				return rawget(self, "____l")[index .. "____l2"]
 			end
 			
@@ -619,16 +625,35 @@ function Object(Obj)
 			ferror(debug.traceback(), "Attempt to call " .. self.ClassName)
 		end,
 		__newindex = function(self, index, value)
-			if rawget(self, "____l")[index .. "____l2"] or rawget(self, "____l")[index .. "____l3"] then
-				local fn = self:GetFullName()
-				ferror(debug.traceback(), "Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
+			if rawget(self, "____c")[index] then
+				if rawget(self, "____o"):IsA("MarketplaceService") and index:lower() == "processreceipt" then
+					rawget(self, "____o")[index] = function(Receipt)
+						--todo
+					end
+				else
+					rawget(self, "____o")[index] = function(...)
+						local a = {...}
+						for _,v in pairs(a) do
+							if typeof(v) == "Instance" then
+								a[_] = Object(v)
+							end
+						end
+						
+						return value(unpack(a))
+					end
+				end
+			else
+				if rawget(self, "____l")[index .. "____l2"] or rawget(self, "____l")[index .. "____l3"] then
+					local fn = self:GetFullName()
+					ferror(debug.traceback(), "Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
+				end
+				
+				if Original.typeof(value) == "table" and value.XeptixFrameworkObject then
+					value = value.____o
+				end
+				
+				rawget(self, "____o")[index] = value
 			end
-			
-			if Original.typeof(value) == "table" and value.XeptixFrameworkObject then
-				value = value.____o
-			end
-			
-			rawget(self, "____o")[index] = value
 		end,
 		__metatable = function()
 			return Modified.____o
@@ -667,6 +692,8 @@ function Object(Obj)
 			return #rawget(self, "____o"):GetChildren()
 		end
 	})
+	
+	rawset(NewObj, "____c", NewObj:GetCallbacks())
 	
 	Obj.Changed:connect(function()
 		if not Obj.Parent then

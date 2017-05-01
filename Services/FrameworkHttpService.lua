@@ -7,6 +7,10 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		self:SetProperty("HttpEnabled", false)
 		self:SetProperty("HttpConnected", false)
 		self:SetProperty("_", game:GetService("HttpService"))
+		self:SetProperty("PayloadDelay", 30)
+		self:SetProperty("AutosaveDelay", 180)
+		self:SetProperty("UnloadDelay", 300)
+		self:SetProperty("PayloadEnabled", false)
 		
 		if game:Is("Server") and game:GetFrameworkModule().WebConnection.Connection.Value then
 			if game:GetFrameworkModule():FindFirstChild("SID") then
@@ -21,6 +25,13 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				game:LockProperty("Info", 2)
 				game.FrameworkInternalService:SetProperty("ServerId", x.ServerId or 0)
 				game.FrameworkInternalService:LockProperty("ServerId", 2)
+				
+				self:SetProperty("HttpConnected", true)
+				
+				self.PayloadDelay = x.PayloadDelay
+				self.AutosaveDelay = x.AutosaveDelay
+				self.UnloadDelay = x.UnloadDelay
+				self.PayloadEnabled = true
 				
 				local SID = Instance.new("StringValue", game:GetFrameworkModule())
 				SID.Name = "SID"
@@ -62,6 +73,13 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 			game.FrameworkInternalService:SetProperty("ServerId", 0)
 			game.FrameworkInternalService:LockProperty("ServerId", 2)
 		end
+		
+		self:LockProperty("PayloadDelay", 2)
+		self:LockProperty("AutosaveDelay", 2)
+		self:LockProperty("UnloadDelay", 2)
+		self:LockProperty("PayloadEnabled", 2)
+		self:LockProperty("HttpEnabled", 2)
+		self:LockProperty("HttpConnected", 2)
 
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
 	end,
@@ -169,4 +187,14 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		game.FrameworkService:CheckArgument(debug.traceback(), "Decode", 1, url, "string")
 		return self._:UrlDecode(url)
 	end,
+	payload = {players = {}, sales = {}, visits = {}, errors = {}},
+	GetPayload = function(self)
+		self.payload.time = os.time()
+		return self.payload
+	end,
+	ClearPayload = function(self)
+		self.payload.sales = {}
+		self.payload.visits = {}
+		self.payload.errors = {}
+	end
 }}
