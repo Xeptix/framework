@@ -22,7 +22,7 @@ return {"ThreadService", "ThreadService", {
 							delay(Task.db, function() table.insert(Tasks, Task) end)
 						else
 							table.insert(Tasks, Task)
-						end
+						end--
 					end
 				end
 			end

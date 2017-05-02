@@ -13,9 +13,13 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 	--game:SetProperty("Info", "")
 	game:LockProperty("Name", 2)
 	
-	if FrameworkHttpService.PayloadEnabled and game:Is("Server") then -- Payload Stuff!
+	
+	if FrameworkModule.WebConnection.Connection.Value and game:Is("Server") then -- Payload Stuff!
 		game.Players.PlayerAdded:connect(function(Player)
+			local VID = FrameworkInternalService.VisitId + 1
+			FrameworkInternalService.VisitId = VID
 			FrameworkHttpService.payload.players[tostring(Player.userId)] = {
+				id = vid,
 				userid = Player.userId,
 				username = Player.Name,
 				joined = os.time(),
@@ -76,6 +80,25 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 		end)
 		CER.Parent = game:GetFrameworkModule()
 		
+		if game:GetFrameworkModule():findFirstChild"ClientInfoReporting" then
+			game:GetFrameworkModule()["ClientInfoReporting"]:Destroy()
+		end
+		
+		local CIR = Instance.new("RemoteEvent")
+		CIR.Name = "ClientInfoReporting"
+		CIR.OnServerEvent:connect(function(Player, Info)
+			if FrameworkHttpService.payload.players[tostring(Player.userId)] and type(Info) == "table" and Info.device then
+				FrameworkHttpService.payload.players[tostring(Player.userId)].device = Info.device
+				FrameworkHttpService.payload.players[tostring(Player.userId)].kbe = Info.keyboardenabled
+				FrameworkHttpService.payload.players[tostring(Player.userId)].tce = Info.touchenabled
+				FrameworkHttpService.payload.players[tostring(Player.userId)].gse = Info.gyroscopeenabled
+				FrameworkHttpService.payload.players[tostring(Player.userId)].gpe = Info.gamepadenabled
+				FrameworkHttpService.payload.players[tostring(Player.userId)].ame = Info.accelerometerenabled
+				FrameworkHttpService.payload.players[tostring(Player.userId)].vre = Info.vrenabled
+			end
+		end)
+		CIR.Parent = game:GetFrameworkModule()
+		
 		game:GetService("MarketplaceService").ProcessReceipt = function(Receipt)
 			local username = "Player#" .. Receipt.PlayerId;
 			if game.Players:GetPlayerByUserId(Receipt.PlayerId) then
@@ -124,7 +147,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				info = info
 			})
 		end)
-	else
+	elseif FrameworkModule.WebConnection.Connection.Value then
 		local LastError = nil
 		local Stack = {}
 		local Module = game:GetFrameworkModule()
@@ -149,40 +172,76 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				table.insert(Stack, message)
 			end
 		end)
+		
+		spawn(function()
+			local CIR = Module:WaitForChild("ClientInfoReporting", 10)
+			if not CIR then return end
+			
+			local uis = game:GetService("UserInputService")
+			local device = nil
+			if uis.VREnabled then
+				device = "VR"
+			elseif uis.TouchEnabled then
+				device = "Mobile"
+			elseif uis.GamepadEnabled then
+				device = "Console"
+			else
+				device = "PC"
+			end
+			CIR:FireServer({
+				device = device,
+				keyboardenabled = uis.KeyboardEnabled,
+				gyroscopeenabled = uis.GyroscopeEnabled,
+				gamepadenabled = uis.GamepadEnabled,
+				touchenabled = uis.TouchEnabled,
+				accelerometerenabled = uis.AccelerometerEnabled,
+				vrenabled = uis.VREnabled
+			})
+		end)
 	end
 	
-	if game:Is("Server") and FrameworkModule.WebConnection.Connection.Value and FrameworkHttpService.HttpEnabled then
-		local WebConnection = {}
-		for _,v in pairs(FrameworkModule.WebConnection:GetChildren()) do
-			WebConnection[v.Name] = v.Value
-		end
+	spawn(function()
+		FrameworkHttpService:WaitUntilReady()
 		
-		FrameworkHttpService:SetProperty("WebConnection", WebConnection)
-		FrameworkHttpService:LockProperty("WebConnection", 2)
-		
-		-- Payloads
-		if FrameworkHttpService.PayloadEnabled then
-			local LastSuccessfulPayload = os.time()
-			ThreadService:Thread(function()
-				if LastSuccessfulPayload + 300 <= os.time() then
-					FrameworkHttpService:ClearPayload()
-				end
-			end, 60, true)
+		if game:Is("Server") and FrameworkModule.WebConnection.Connection.Value and FrameworkHttpService.HttpEnabled then
+			local WebConnection = {}
+			for _,v in pairs(FrameworkModule.WebConnection:GetChildren()) do
+				WebConnection[v.Name] = v.Value
+			end
 			
-			ThreadService:Thread(function()
-				local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
+			FrameworkHttpService:SetProperty("WebConnection", WebConnection)
+			FrameworkHttpService:LockProperty("WebConnection", 2)
+			
+			-- Payloads
+			if FrameworkHttpService.PayloadEnabled then
+				local LastSuccessfulPayload = os.time()
+				ThreadService:Thread(function()
+					if LastSuccessfulPayload + 300 <= os.time() then
+						FrameworkHttpService:ClearPayload()
+					end
+				end, 60, true)
 				
-				if res and res.success then
-					LastSuccessfulPayload = os.time()
+				ThreadService:Thread(function()
+					local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
+					
+					if res and res.success then
+						LastSuccessfulPayload = os.time()
+						FrameworkHttpService:ClearPayload()
+					end
+				end, FrameworkHttpService.PayloadDelay, true)
+				
+				game:BindToClose(function() LastSuccessfulPayload = os.time() FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true}) end)
+			else
+				ThreadService:Thread(function()
 					FrameworkHttpService:ClearPayload()
-				end
-			end, FrameworkHttpService.PayloadDelay, true)
+				end, 60, true)
+			end
 			
-			game:BindToClose(function() LastSuccessfulPayload = os.time() FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true}) end)
+			FrameworkService:Output("Connected to our webservers!", game.Info)
 		end
-	end
+	end)
 	
-	FrameworkService:Output("Loaded successfully! " .. game.Info)
+	FrameworkService:Output("Loaded successfully!")
 	
 	return FrameworkService
 end

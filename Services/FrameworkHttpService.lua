@@ -6,6 +6,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 
 		self:SetProperty("HttpEnabled", false)
 		self:SetProperty("HttpConnected", false)
+		self:SetProperty("Ready", false)
 		self:SetProperty("_", game:GetService("HttpService"))
 		self:SetProperty("PayloadDelay", 30)
 		self:SetProperty("AutosaveDelay", 180)
@@ -13,78 +14,107 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		self:SetProperty("PayloadEnabled", false)
 		
 		if game:Is("Server") and game:GetFrameworkModule().WebConnection.Connection.Value then
-			if game:GetFrameworkModule():FindFirstChild("SID") then
-				game:GetFrameworkModule().SID:Destroy()
-			end
-			
-			game:SetProperty("Info", "")
-			local passed, msg = pcall(function()
-				local x, e = self:Get("server", {json=true, bypassConnectionLock=true})
+			spawn(function()
+				if game:GetFrameworkModule():FindFirstChild("SID") then
+					game:GetFrameworkModule().SID:Destroy()
+				end
 				
-				game:SetProperty("Info", x.Info or "")
-				game:LockProperty("Info", 2)
-				game.FrameworkInternalService:SetProperty("ServerId", x.ServerId or 0)
-				game.FrameworkInternalService:LockProperty("ServerId", 2)
-				
-				self:SetProperty("HttpConnected", true)
-				
-				self.PayloadDelay = x.PayloadDelay
-				self.AutosaveDelay = x.AutosaveDelay
-				self.UnloadDelay = x.UnloadDelay
-				self.PayloadEnabled = true
-				
-				local SID = Instance.new("StringValue", game:GetFrameworkModule())
-				SID.Name = "SID"
-				SID.Value = game.FrameworkInternalService.ServerId
-			end)
-			
-			if passed then
-				self.HttpEnabled = true
-			else--
-				pcall(function()
-					game:SetProperty("Info", "")
+				game:SetProperty("Info", "")
+				local passed, msg = pcall(function()
+					local x, e = self:Get("server", {json=true, bypassConnectionLock=true, bypassWaiting=true})
+					
+					game:SetProperty("Info", x.Info or "")
 					game:LockProperty("Info", 2)
-					game.FrameworkInternalService:SetProperty("ServerId", 0)
+					game.FrameworkInternalService:SetProperty("ServerId", x.ServerId or 0)
 					game.FrameworkInternalService:LockProperty("ServerId", 2)
+					
+					self:SetProperty("HttpConnected", true)
+					
+					self.PayloadDelay = x.PayloadDelay
+					self.AutosaveDelay = x.AutosaveDelay
+					self.UnloadDelay = x.UnloadDelay
+					self.PayloadEnabled = true
+					
+					local SID = Instance.new("StringValue", game:GetFrameworkModule())
+					SID.Name = "SID"
+					SID.Value = game.FrameworkInternalService.ServerId
+					
+					self:SetProperty("Ready", true)
 				end)
 				
-				local SID = Instance.new("StringValue", game:GetFrameworkModule())
-				SID.Name = "SID"
-				SID.Value = game.FrameworkInternalService.ServerId
-				
-				if msg:lower() ~= "http requests are not enabled" then
+				if passed then
 					self.HttpEnabled = true
+				else--
+					pcall(function()
+						game:SetProperty("Info", "")
+						game:LockProperty("Info", 2)
+						game.FrameworkInternalService:SetProperty("ServerId", 0)
+						game.FrameworkInternalService:LockProperty("ServerId", 2)
+					end)
+					
+					local SID = Instance.new("StringValue", game:GetFrameworkModule())
+					SID.Name = "SID"
+					SID.Value = game.FrameworkInternalService.ServerId
+					
+					if msg:lower() ~= "http requests are not enabled" then
+						self.HttpEnabled = true
+					end
 				end
-			end
-			
-			if self.HttpEnabled then
-				game.FrameworkInternalService:Report("Server " .. game.Info .. " is connected to the website and ready to make requests!")
-			else 
 				
-			end
+				if self.HttpEnabled then
+					game.FrameworkInternalService:Report("Server " .. game.Info .. " is connected to the website and ready to make requests!")
+				else 
+					
+				end
+				
+				self:LockProperty("PayloadDelay", 2)
+				self:LockProperty("AutosaveDelay", 2)
+				self:LockProperty("UnloadDelay", 2)
+				self:LockProperty("PayloadEnabled", 2)
+				self:LockProperty("HttpEnabled", 2)
+				self:LockProperty("HttpConnected", 2)
+			end)
 		elseif game:Is("Local") and game:GetFrameworkModule().WebConnection.Connection.Value then
 			game:SetProperty("Info", "PID=" .. game.PlaceId .. "&SID=" .. game:GetFrameworkModule():WaitForChild("SID").Value)
 			game:LockProperty("Info", 2)
 			game.FrameworkInternalService:SetProperty("ServerId", game:GetFrameworkModule().SID.Value)
 			game.FrameworkInternalService:LockProperty("ServerId", 2)
+			
+			self:LockProperty("PayloadDelay", 2)
+			self:LockProperty("AutosaveDelay", 2)
+			self:LockProperty("UnloadDelay", 2)
+			self:LockProperty("PayloadEnabled", 2)
+			self:LockProperty("HttpEnabled", 2)
+			self:LockProperty("HttpConnected", 2)
 		else
 			game:SetProperty("Info", "PID=" .. game.PlaceId)
 			game:LockProperty("Info", 2)
 			game.FrameworkInternalService:SetProperty("ServerId", 0)
 			game.FrameworkInternalService:LockProperty("ServerId", 2)
+			
+			self:LockProperty("PayloadDelay", 2)
+			self:LockProperty("AutosaveDelay", 2)
+			self:LockProperty("UnloadDelay", 2)
+			self:LockProperty("PayloadEnabled", 2)
+			self:LockProperty("HttpEnabled", 2)
+			self:LockProperty("HttpConnected", 2)
 		end
-		
-		self:LockProperty("PayloadDelay", 2)
-		self:LockProperty("AutosaveDelay", 2)
-		self:LockProperty("UnloadDelay", 2)
-		self:LockProperty("PayloadEnabled", 2)
-		self:LockProperty("HttpEnabled", 2)
-		self:LockProperty("HttpConnected", 2)
+	
 
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
 	end,
+	WaitUntilReady = function(self)
+		if not self.Ready then
+			repeat wait() until self.Ready
+		end
+		
+		wait()
+	end,
 	Get = function(self, url, opt)
 		if not opt then opt = {} end
+		
+		
+		if not opt.bypassWaiting then self:WaitUntilReady() end
 		
 		game.FrameworkService:LockServer(debug.traceback(), "Get")
 		if not opt.bypassConnectionLock then
@@ -115,6 +145,9 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 	end,
 	Post = function(self, url, data, opt)
 		if not opt then opt = {} end
+		
+		if not opt.bypassWaiting then self:WaitUntilReady() end
+		
 		game.FrameworkService:LockServer(debug.traceback(), "Post")
 		if not opt.bypassConnectionLock then
 			game.FrameworkService:LockConnected(debug.traceback(), "Post")

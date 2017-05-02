@@ -528,7 +528,12 @@ return {"PlayerDataService", "PlayerDataService", {
 			return game.PlayerDataService.storage[_self.userid .. "-" .. _self.profile].player
 		end
 		
+		
 		self.storage[strid] = _self
+		
+		if _self.player then
+			_self:iSet("username", _self.player.Name)
+		end--
 		self.locked[strid] = false
 		return self.storage[strid]
 	end,

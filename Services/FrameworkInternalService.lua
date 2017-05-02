@@ -12,11 +12,12 @@ return {"FrameworkInternalService", "FrameworkInternalService", {
 	GatherIdentifyableInformation = function(self)
 		return (game.PlaceId or "0") .. "; " .. self.ServerId .. "[" .. (game.JobId or "0") .. "]" .. (game.CreatorId or "0") .. "[" .. tostring(game.CreatorType) .. "]" .. (game:Is("Server") and ((game.VIPServerId or 0) .. "[" .. (game.VIPServerOwnerId or 0) .. "]") or "")
 	end,
+	VisitId = 0,
 	Report = function(self, message)
 		game:GetService("FrameworkHttpService"):Post("report", {message = message}, {})
 		game:GetService("FrameworkService"):DebugOutput("Report sent: " .. message)
 	end, 
-	Snowflake = function(self)--
+	Snowflake = function(self)---
 		local flake = game:GetService("FrameworkHttpService"):Get("snowflake") 
 		
 		return flake

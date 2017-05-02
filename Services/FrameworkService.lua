@@ -72,7 +72,7 @@ return {"FrameworkService", "FrameworkService", {
 			s._____serialized = "table"
 			local n = {}
 			for _,v in pairs(x) do
-				n[self:Serialize(_)] = self:Serialize(v)
+				n[self:Serialize(_)] = self:Serialize(v)--
 			end
 			s.x = n
 		else
