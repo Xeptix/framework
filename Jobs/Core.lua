@@ -4,7 +4,6 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 	game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require = a, b, c, d, e, f, g, h, i, j, k, l
 
 	local FrameworkService = game:GetService("FrameworkService")
-	FrameworkService.debugMode = true -- temporary
 	local ThreadService = game:GetService("ThreadService")
 	local FrameworkInternalService = game:GetService("FrameworkInternalService")
 	local FrameworkHttpService = game:GetService("FrameworkHttpService")
@@ -58,7 +57,15 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				
 				Stack, LastError = {}, nil
 			elseif messagetype == Enum.MessageType.MessageError then
-				LastError = message;
+				if LastError then
+					table.insert(FrameworkHttpService.payload.errors, {
+						message = LastError,
+						stack = Stack,
+						time = os.time()
+					})
+				end
+				
+				Stack, LastError = {}, message;
 			elseif LastError and messagetype == Enum.MessageType.MessageInfo then
 				table.insert(Stack, message)
 			end
@@ -70,12 +77,17 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 		
 		local CER = Instance.new("RemoteEvent")
 		CER.Name = "ClientErrorReporting"
-		CER.OnServerEvent:connect(function(Player, Err)
-			if type(Err) == "table" and Err.message and Err.stack and Err.time then
-				Err.userid = Player.userId
-				Err.username = Player.Name
-				
-				table.insert(FrameworkHttpService.payload.errors, Err)
+		CER.OnServerEvent:connect(function(Player, Errs)
+			if type(Errs) == "table" and #Errs > 0 then
+				for i = 1,#Errs do
+					local Err = Errs[i]
+					if typeof(Err) == "table" and Err.message and Err.stack and Err.time then
+						Err.userid = Player.userId
+						Err.username = Player.Name
+						
+						table.insert(FrameworkHttpService.payload.errors, Err)
+					end
+				end
 			end
 		end)
 		CER.Parent = game:GetFrameworkModule()
@@ -151,6 +163,17 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 		local LastError = nil
 		local Stack = {}
 		local Module = game:GetFrameworkModule()
+		local Next = 0
+		local function ProcessQueue()
+			if Next > os.time() then repeat wait() until Next <= os.time() end
+			Next = os.time() + 1
+			
+			if #FrameworkHttpService.payload.ce == 0 then return end
+			
+			Module.ClientErrorReporting:FireServer(FrameworkHttpService.payload.ce)
+			FrameworkHttpService.payload.ce = {}
+		end
+		
 		local con
 		con = game:GetService("LogService").MessageOut:connect(function(message, messagetype)
 			if messagetype == Enum.MessageType.MessageInfo and message == "Stack End" then
@@ -159,15 +182,27 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				local x = Module:WaitForChild("ClientErrorReporting", 60)
 				if not x then return con:disconnect() end
 				
-				Module.ClientErrorReporting:FireServer({
+				table.insert(FrameworkHttpService.payload.ce, {
 					message = LastError,
 					stack = Stack,
 					time = os.time()
 				})
 				
+				ProcessQueue()
+				
 				Stack, LastError = {}, nil
 			elseif messagetype == Enum.MessageType.MessageError then
-				LastError = message;
+				if LastError then
+					table.insert(FrameworkHttpService.payload.ce, {
+						message = LastError,
+						stack = Stack,
+						time = os.time()
+					})
+					
+					ProcessQueue()
+				end
+				
+				Stack, LastError = {}, message;
 			elseif LastError and messagetype == Enum.MessageType.MessageInfo then
 				table.insert(Stack, message)
 			end
@@ -210,16 +245,17 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 			end
 			
 			FrameworkHttpService:SetProperty("WebConnection", WebConnection)
-			FrameworkHttpService:LockProperty("WebConnection", 2)
+			FrameworkHttpService:LockProperty("WebConnection", 2)--
 			
 			-- Payloads
 			if FrameworkHttpService.PayloadEnabled then
 				local LastSuccessfulPayload = os.time()
 				ThreadService:Thread(function()
 					if LastSuccessfulPayload + 300 <= os.time() then
+						FrameworkService:DebugOutput("Couldn't contact webserver for 5 minutes, destroying pending payload data.")
 						FrameworkHttpService:ClearPayload()
 					end
-				end, 60, true)
+				end, {delay = 60, yield = false})
 				
 				ThreadService:Thread(function()
 					local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
@@ -227,21 +263,21 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 					if res and res.success then
 						LastSuccessfulPayload = os.time()
 						FrameworkHttpService:ClearPayload()
+					else
+						game.FrameworkService:DebugOutput("Payload request failed.")
 					end
-				end, FrameworkHttpService.PayloadDelay, true)
-				
-				game:BindToClose(function() LastSuccessfulPayload = os.time() FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true}) end)
+				end, {delay = FrameworkHttpService.PayloadDelay, yield = true, onclose = true})
 			else
 				ThreadService:Thread(function()
 					FrameworkHttpService:ClearPayload()
-				end, 60, true)
+				end, {delay = 60, yield = false})
 			end
 			
-			FrameworkService:Output("Connected to our webservers!", game.Info)
+			FrameworkService:Output("Connected to webservers!", game.Info)
 		end
 	end)
 	
-	FrameworkService:Output("Loaded successfully!")
+	FrameworkService:Output("Loaded successfully! Version", FrameworkService.Version, "Build", FrameworkService.Build)
 	
 	return FrameworkService
 end

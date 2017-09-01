@@ -1,21 +1,33 @@
 -- Core framework service.
 
+local argumentCheckingEnabled = true
+local Legacy
 return {"FrameworkService", "FrameworkService", {
+	Version = "3.0.1b",
+	Build = 309,
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l, m)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require, ferror = a, b, c, d, e, f, g, h, i, j, k, l, m
 
+		self:LockProperty("Version", 2)--
+		self:LockProperty("Build", 2)
+		
 		self:DebugOutput("Service " .. self .. " has started successfully!")
 	end,
 	Output = function(self, ...) 
 		print("[ Framework ]", ...)
 	end,
-	debugMode = false,
+	debugMode = true,
 	DebugOutput = function(self, ...)
 		if not self.debugMode then return end
 		
 		print("[ Framework *D ]", ...)--
-	end, 
+	end,
+	DisableArgumentChecking = function(self)
+		argumentCheckingEnabled = false
+	end,
 	CheckArgument = function(self, stack, func, arg, got, expecting)
+		if argumentCheckingEnabled == false then return end
+		
 		local t = typeof(got):lower()
 		
 		if typeof(expecting) == "table" then
@@ -31,7 +43,7 @@ return {"FrameworkService", "FrameworkService", {
 			if not goodToGo then
 				ferror(stack, "bad argument #" .. arg .. " to '" .. (func or "?") .. "' (" .. table.join(expecting, ",", "or") .. " expected, got " .. t .. ")", 0)
 			end
-		else -- NOTE: if you got an error here, it is NOT a framework error. Ignore all lines in the stack trace that go to the framework's scripts. Typically the very bottom script(s) are the ones where the actual error was triggered. More info on this in documentation.
+		else -- Notice: if you got an error here, it is NOT a framework error. Ignore all lines in the stack trace that go to the framework's scripts. Typically the very bottom script(s) are the ones where the actual error was triggered. More info on this in the documentation on our website.
 			if t ~= expecting:lower() then
 				ferror(stack, "bad argument #" .. arg .. " to '" .. (func or "?") .. "' (" .. expecting .. " expected, got " .. t .. ")", 0)
 			end
@@ -44,7 +56,7 @@ return {"FrameworkService", "FrameworkService", {
 	end,
 	LockClient = function(self, stack, name)
 		if not game:Is("Client") then
-			ferror(stack, name .. " must be ran on the client.")
+			ferror(stack, name .. " must be ran on a client.")
 		end
 	end,
 	LockConnected = function(self, stack, name)
@@ -131,12 +143,50 @@ return {"FrameworkService", "FrameworkService", {
 				return BrickColor.new(s.x)
 			elseif s._____serialized == "Ray" then
 				local x = string.split(s.x, "},")
-				return Ray.new(Vector3.new(string.split(x[1]:gsub(" ",""):gsub("{", ""):gsub("}", ""),",")), Vector3.new(string.split(x[2]:gsub(" ",""):gsub("{", ""):gsub("}", ""),",")))
+				return Ray.new(Vector3.new(unpack(string.split(x[1]:gsub(" ",""):gsub("{", ""):gsub("}", ""),","))), Vector3.new(unpack(string.split(x[2]:gsub(" ",""):gsub("{", ""):gsub("}", ""),","))))
+			elseif s._____serialized == "Region3" then
+				local x = string.split(s.x, ";")
+				local pos = CFrame.new(unpack(string.split(x[1]:gsub(" ",""):gsub("{", ""):gsub("}", ""),","))).p
+				local sz = Vector3.new(unpack(string.split(x[2]:gsub(" ",""):gsub("{", ""):gsub("}", ""),",")))
+				
+				local SizeOffset = sz/2
+				local Point1 = pos - SizeOffset
+				local Point2 = pos + SizeOffset
+				return Region3.new(Point1, Point2)
+			elseif s._____serialized == "Region3int16" then
+				local x = string.split(s.x, ";")
+				local a = CFrame.new(unpack(string.split(x[1]:gsub(" ",""):gsub("{", ""):gsub("}", ""),","))).p
+				local pos = Vector3int16.new(a.x,a.y,a.z)
+				local sz = Vector3int16.new(unpack(string.split(x[2]:gsub(" ",""):gsub("{", ""):gsub("}", ""),",")))
+				
+				local SizeOffset = sz/2
+				local Point1 = pos - SizeOffset
+				local Point2 = pos + SizeOffset
+				return Region3int16.new(Point1, Point2)
 			elseif s._____serialized == "UDim2" then
-				return UDim2.new(string.split(s.x:gsub(" ",""):gsub("{", ""):gsub("}", ""),","))
-			elseif s._____serialized == "Region3int16" or s._____serialized == "Region3" or s._____serialized == "UDim" or s._____serialized == "Vector3" or s._____serialized == "Vector2" or s._____serialized == "CFrame" or s._____serialized == "Color3" then
-				return getfenv()[s._____serialized].new(string.split(s.x:gsub(" ",""),","))
+				return UDim2.new(unpack(string.split(s.x:gsub(" ",""):gsub("{", ""):gsub("}", ""),",")))
+			elseif s._____serialized == "Region3int16" or s._____serialized == "Vector3int16" or s._____serialized == "Vector2int16" or s._____serialized == "Region3" or s._____serialized == "UDim" or s._____serialized == "Vector3" or s._____serialized == "Vector2" or s._____serialized == "CFrame" or s._____serialized == "Color3" then
+				return getfenv()[s._____serialized].new(unpack(string.split(s.x:gsub(" ",""),",")))
 			end
 		end
+		
+		return x
+	end,
+	ShutdownServer = function(self, msg)
+		game.FrameworkService:CheckArgument(debug.traceback(), "ShutdownServer", 1, msg, {"string", "nil"})
+		
+		game.Players:KickAll(msg)
+		game.Players.PlayerAdded:connect(function(Plr)
+			Plr:Kick(msg)
+		end)
+	end,
+	-- Notice: The method below (GetLegacyFrameworkObject) is not guarenteed to function properly, and it is not advised to use it. This is only to allow v1/v2 places to operate with the new framework without (very much) code changes.
+	GetLegacyFrameworkObject = function(self) --todo: returns a legacy object equivilent to the "_G.framework"/"framework" variables from v1/v2, so that way people can just throw in "framework = game.FrameworkService:GetLegacyFrameworkObject()" for support without altering code.
+		if Legacy then return Legacy end
+		
+		LegacyObj = {}
+		
+		Legacy = setmetatable(Legacy, {})-- do we need this anymore?
+		return Legacy
 	end
 }}

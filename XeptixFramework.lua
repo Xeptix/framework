@@ -1,16 +1,10 @@
--- Xeptix Framework 3.0.0a
+-- Xeptix Framework 3.0.1b (build 309; debug enabled)
 -- Documentation: https://github.com/xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
--- your own custom properties, methods, and events for all objects. These work cross-script, but server/client do not share these
--- even if you're not using Filtering Enabled.
+-- your own custom properties, methods, and events for all objects. These work cross-script, but server/client do not share
+-- these even if you're not using Filtering Enabled.
 -- Supports all games, both group and personal, with all settings (including fe/non-fe).
-
-
-------> You are not currently connected to our webservers! <------
--- Some features require you to connect your game to our website (https://framework.xeptix.com/connect)
--- Make sure HttpService is enabled if you choose to do so. Features that require a connection to our webservers will throw an error.
--------------> It is advised that you connect your game! <-------------
 
 
 -- Do not edit this script, as when the framework updates your changes will be erased.
@@ -29,13 +23,17 @@
 
 
 
+
 FrameworkModule = game:findFirstChild(".xeptixframework.", true).Parent
 Original = {["require"] = require, ["print"] = print, ["Instance"] = Instance, ["typeof"] = typeof, ["type"] = type, ["game"] = game, ["Game"] = game, ["Workspace"] = workspace, ["workspace"] = workspace, ["math"] = math, ["table"] = table, ["string"] = string}
 FrameworkServices = {}
 FrameworkJobs = {}
 superLockedProperties = {}
 superLockedProperties.____o = true
+superLockedProperties.____s = true
 superLockedProperties.____l = true
+superLockedProperties.____c = true
+superLockedProperties.____e = true
 superLockedProperties.LockProperty = true
 superLockedProperties.SetProperty = true
 superLockedProperties.SetMethod = true
@@ -93,7 +91,7 @@ ModifiedObjects = {
 		end,
 		findFirstChildOfClass = function(self, ...)
 			return rawget(self, "FindFirstChildOfClass")(self, ...)
-		end,
+		end,--
 		FindFirstChildWithProperty = function(self, Name, Value, Recursive)
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, Name, "string")
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 3, Recursive, {"boolean", "nil"})
@@ -460,6 +458,17 @@ ModifiedObjects = {
 			return false
 		end
 	},
+	["Players"] = {
+		KickAll = function(self, msg)
+			game.FrameworkService:CheckArgument(debug.traceback(), "KickAll", 1, msg, {"string", "nil"})
+			
+			game.FrameworkService:LockServer(debug.traceback(), "KickAll")
+			
+			for _,v in pairs(game.Players:GetPlayers()) do
+				v:Kick(msg)
+			end
+		end
+	},
 	["Player"] = {
 		LoadData = function(self, profile, nocache)
 			game.FrameworkService:CheckArgument(debug.traceback(), "LoadData", 1, profile, {"number", "nil"})
@@ -557,18 +566,19 @@ function Object(Obj)
 	local NewObj
 	NewObj = setmetatable(Modified, {
 		__index = function(self, index)
-			if rawget(self, "____l")[index .. "____l1"] or rawget(self, "____l")[index .. "____l3"] and index ~= "GetFullName" then
+			local l_ = rawget(self, "____l")
+			if l_[index .. "____l1"] or l_[index .. "____l3"] and index ~= "GetFullName" then
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Reading is not allowed!", 0)
-			elseif rawget(self, "____l")[index .. "____l2"] ~= nil then
-				return rawget(self, "____l")[index .. "____l2"]
+			elseif l_[index .. "____l2"] ~= nil then
+				return l_[index .. "____l2"]
 			end
 			
 			local v = rawget(self, index)
 			if v ~= nil then
 				return v
 			else
-				local o = rawget(self, "____o")
+				local o = Obj
 				local value
 				
 				local ch = o:FindFirstChild(index)
@@ -578,13 +588,15 @@ function Object(Obj)
 				
 				if not pcall(function()
 					value = o[index]
-					if typeof(value) == "function" then -- ok, methods, time to do some magic!
+					local vt = typeof(value)
+					if vt == "function" then -- ok, methods, time to do some magic!
 						value = function(self, ...)
 							local a = {...}
 							for i = 1,#a do
-								if typeof(a[i]) == "Instance" and a[i]:IsA("XeptixObject") then
+								local ot = typeof(a[i])
+								if ot == "Instance" and a[i]:IsA("XeptixObject") then
 									a[i] = a[i].____o
-								elseif typeof(a[i]) == "table" then
+								elseif ot == "table" then
 									table.recursive(a[i], function(t, k, v)
 										if typeof(v) == "Instance" and v:IsA("XeptixObject") then
 											t[k] = v.____o
@@ -596,9 +608,10 @@ function Object(Obj)
 							-- if you get an error here, it is not an error in the framework's code. ignore this line in the stack trace. this just redirects to roblox's api.
 							local b = {o[index](o, unpack(a))}
 							for i = 1,#b do
-								if typeof(b[i]) == "Instance" then
+								local ot = typeof(b[i])
+								if ot == "Instance" then
 									b[i] = Object(b[i])
-								elseif typeof(b[i]) == "table" then
+								elseif ot == "table" then
 									table.recursive(b[i], function(t, k, v)
 										if typeof(v) == "Instance" then
 											t[k] = Object(v)
@@ -609,9 +622,9 @@ function Object(Obj)
 							
 							return unpack(b)
 						end
-					elseif typeof(value) == "Instance" then
+					elseif vt == "Instance" then
 						value = Object(value)
-					elseif typeof(value) == "RBXScriptSignal" then
+					elseif vt == "RBXScriptSignal" then
 						value = self.____e[index] or value
 					end
 				end) then
@@ -625,12 +638,14 @@ function Object(Obj)
 			ferror(debug.traceback(), "Attempt to call " .. self.ClassName)
 		end,
 		__newindex = function(self, index, value)
-			if rawget(self, "____c")[index] then
-				if rawget(self, "____o"):IsA("MarketplaceService") and index:lower() == "processreceipt" then
-					local ms = rawget(self, "____o")
+			local c_ = rawget(self, "____c")
+			if c_[index] then
+				if Obj:IsA("MarketplaceService") and index:lower() == "processreceipt" then
+					local ms = Obj
 					local oms = self
-					if rawget(self, "_receipts") then
-						table.insert(rawget(self, "_receipts"), value)
+					local r_ = rawget(self, "_receipts")
+					if r_ then
+						table.insert(r_, value)
 					else
 						rawset(self, "_receipts", {value})
 						ms[index] = function(Receipt)
@@ -646,7 +661,7 @@ function Object(Obj)
 						end
 					end
 				else
-					rawget(self, "____o")[index] = function(...)
+					Obj[index] = function(...)
 						local a = {...}
 						for _,v in pairs(a) do
 							if typeof(v) == "Instance" then
@@ -658,16 +673,21 @@ function Object(Obj)
 					end
 				end
 			else
-				if rawget(self, "____l")[index .. "____l2"] or rawget(self, "____l")[index .. "____l3"] then
+				local p_ = rawget(self, index)
+				local l_ = rawget(self, "____l")
+				if l_[index .. "____l2"] or l_[index .. "____l3"] then
 					local fn = self:GetFullName()
 					ferror(debug.traceback(), "Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
-				end
+				end--
 				
 				if Original.typeof(value) == "table" and value.XeptixFrameworkObject then
 					value = value.____o
 				end
 				
-				rawget(self, "____o")[index] = value
+				pcall(function() Obj[index] = value end)
+				if p_ ~= nil then
+					rawset(self, index, value)
+				end
 			end
 		end,
 		__metatable = function()
@@ -676,6 +696,11 @@ function Object(Obj)
 		__concat = function(self, value)
 			return self.Name .. value
 		end,
+		__len = function(self)
+			return #rawget(self, "____o"):GetChildren()
+		end,
+		-- All of the below metamethods will throw errors.
+		-- Notice: this is not a framework issue, you can not perform mathematics on instances broski.
 		__add = function(self, value)
 			return rawget(self, "____o") + value
 		end,
@@ -702,9 +727,6 @@ function Object(Obj)
 		end,
 		__le = function(self, value)
 			return rawget(self, "____o") <= value
-		end,
-		__len = function(self)
-			return #rawget(self, "____o"):GetChildren()
 		end
 	})
 	
@@ -724,10 +746,11 @@ function Object(Obj)
 	--if NewObj.ClassName ~= "DataModel" then
 		for _,v in pairs(NewObj:GetEvents()) do -- hacky event stuff yay!!!
 			pcall(function()
-				if typeof(NewObj[_]) == "RBXScriptSignal" then
-					local rbx = NewObj[_]
-					local signal = RbxUtility:CreateSignal()
-					local c = signal.connect;
+				local rbx = NewObj[_]
+				if typeof(rbx) == "RBXScriptSignal" then
+					--local signal = RbxUtility:CreateSignal()
+					--local c = signal.connect;
+					local signal = {}
 					local first
 					local hah = {}
 					function signal:connect(f)
@@ -786,10 +809,11 @@ function Object(Obj)
 	return NewObj
 end
 
-function CreateService(Name, Class, Service)
+function CreateService(Name, Class, Service, Hidden)
 	local S
 	pcall(function() S = game:FindFirstChild(Name) end)
-	S = S or Object(Instance.new("Configuration", game))
+	S = S or Object(Instance.new(Hidden == true and "Snap" or "Motor", game))
+	S.Archivable = false
 	FrameworkServices[Name] = S
 	FrameworkServices[Class] = S
 	
@@ -799,7 +823,7 @@ function CreateService(Name, Class, Service)
 	S.Name = Name
 	S:SetProperty("XeptixFrameworkService", true)
 	S:SetProperty("ServiceStarted", false)
-	
+	--
 	S:LockProperty("_isService", 2)
 	S:LockProperty("ClassName", 2)
 	S:LockProperty("SuperClassName", 2)
@@ -824,7 +848,7 @@ end
 
 function LoadService(name)
 	local Service = require(FrameworkModule.Services[name])
-	local ServiceObject = CreateService(Service[1], Service[2], Service[3])
+	local ServiceObject = CreateService(Service[1], Service[2], Service[3], Service[4])
 	ServiceObject:_StartService(Object(game), Object(game), Object(workspace), Object(workspace), table, string, math, typeof, type, Instance, print, require, ferror)
 
 	return ServiceObject
@@ -1030,6 +1054,7 @@ return function(environment)
 	environment.math = math
 	environment.string = string
 	environment.script = Object(environment.script)
+	environment._xfscript_ = environment.script
 	
 	return environment
 end

@@ -1,6 +1,6 @@
--- An example of a service!
+-- All internal. Use with caution.
 
-return {"FrameworkInternalService", "FrameworkInternalService", {
+return {"FrameworkInternalService", "FrameworkInternalService", {--
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require = a, b, c, d, e, f, g, h, i, j, k, l
 
@@ -11,6 +11,10 @@ return {"FrameworkInternalService", "FrameworkInternalService", {
 	end,
 	GatherIdentifyableInformation = function(self)
 		return (game.PlaceId or "0") .. "; " .. self.ServerId .. "[" .. (game.JobId or "0") .. "]" .. (game.CreatorId or "0") .. "[" .. tostring(game.CreatorType) .. "]" .. (game:Is("Server") and ((game.VIPServerId or 0) .. "[" .. (game.VIPServerOwnerId or 0) .. "]") or "")
+	end,
+	GetSelf = function(self)--failed attempt at something neat ):
+		print(getfenv()._xfscript_ or "nil")
+		if getfenv()._xfscript_ then print(getfenv()._xfscript_:GetFullName()) end
 	end,
 	VisitId = 0,
 	Report = function(self, message)
@@ -31,6 +35,14 @@ return {"FrameworkInternalService", "FrameworkInternalService", {
 			val = "NumberValue"
 		elseif t == "boolean" then
 			val = "BoolValue"
+		elseif t == "Color3" then
+			val = "Color3Value"
+		elseif t == "BrickColor" then
+			val = "BrickColorValue"
+		elseif t == "Vector3" then
+			val = "Vector3Value"
+		elseif t == "CFrame" then
+			val = "CFrameValue"
 		else
 			val, f = "StringValue", function(v)
 				Instance.new("Folder", v).Name = "Serialized"
@@ -43,7 +55,7 @@ return {"FrameworkInternalService", "FrameworkInternalService", {
 		if f then f(v) else v.Value = Var end
 		
 		return v
-	end,
+	end,--
 	Val2Var = function(self, Val)
 		if Val:findFirstChild("Serialized") then
 			return game.FrameworkService:Unserialize(Val.Value)
@@ -75,4 +87,4 @@ return {"FrameworkInternalService", "FrameworkInternalService", {
 			new.Parent = p
 		end
 	end
-}}
+}, true}
