@@ -33,16 +33,14 @@ return {"ThreadService", "ThreadService", {
 						pcall(Task.task)
 					end
 				end
-			end--
-		end--
+			end
+		end
 		game:GetService("RunService").Stepped:connect(function(_, x)
 			t = t + x
 			
-			local nt = #Tasks -- n't (shoutout to cody ko!)
+			local nt = #Tasks -- n't
 			if nt > 0 then
-				for i = 0, nt / 30 do -- we want to efficiently handle over 30 tasks at onces
-					process() -- should we be concerned about this delaying?... nah!
-				end -- maybe eventually we'll make a new Stepped connection for every 30 tasks?
+				process()
 			end
 		end)
 		

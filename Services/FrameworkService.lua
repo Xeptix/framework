@@ -3,8 +3,8 @@
 local argumentCheckingEnabled = true
 local Legacy
 return {"FrameworkService", "FrameworkService", {
-	Version = "3.0.1b",
-	Build = 309,
+	Version = "3.1", -- t is for testing
+	Build = 458,
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l, m)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require, ferror = a, b, c, d, e, f, g, h, i, j, k, l, m
 
@@ -16,8 +16,19 @@ return {"FrameworkService", "FrameworkService", {
 	Output = function(self, ...) 
 		print("[ Framework ]", ...)
 	end,
-	debugMode = true,
+	debugMode = true, -- outputs debug stuff to console
 	DebugOutput = function(self, ...)
+		local a,s = {...},""
+		for _,v in pairs(a) do
+			local e = s == "" and "" or "_%%%SPACE%%%_"
+			
+			s = e .. tostring(v)
+		end
+		
+		if game:IsFrameworkServiceLoaded("FrameworkHttpService") then
+			--todo
+		end
+		
 		if not self.debugMode then return end
 		
 		print("[ Framework *D ]", ...)--
@@ -63,6 +74,41 @@ return {"FrameworkService", "FrameworkService", {
 		if not game:Is("Connected") and false then
 			ferror(stack, name .. " requires your game to be connected to the framework's webservers. Open your game in Studio and use the Xeptix Framework Plugin to connect your game!")
 		end
+	end,
+	LightSerialize = function(self, x, o)
+		local s = {}
+		
+		if typeof(x) == "Instance" then
+			s._____serialized = "Instance"
+			s.x = {}
+			for i,v in pairs(x:GetProperties()) do
+				if i ~= "Parent" then
+					s.x[i] = self:LightSerialize(v)
+				end
+			end
+			
+			s.c = {}
+			for _,v in pairs(x:GetChildren()) do
+				table.insert(s.c, self:LightSerialize(v))
+			end
+		elseif typeof(x) == "table" then
+			s._____serialized = "table"
+			local n = {}
+			for _,v in pairs(x) do
+				n[self:LightSerialize(_)] = self:LightSerialize(v)--
+			end
+			s.x = n
+		elseif typeof(x) == "string" or typeof(x) == "number" or typeof(x) == "boolean" then
+			return x
+		else
+			s._____serialized = typeof(x)
+			s.x = tostring(x)
+		end
+		
+		return o and s or game.HttpService:JSONEncode(s)
+	end,
+	LightUnserialize = function(self, x)
+		return self:Unserialize(x)
 	end,
 	Serialize = function(self, x, o)
 		local s = {}

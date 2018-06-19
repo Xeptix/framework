@@ -1,4 +1,3 @@
-
 -- An internal service which handles player's data.
 
 local Databases = {}--
@@ -13,9 +12,10 @@ return {"PlayerDataService", "PlayerDataService", {
 		if game:Is("Server") then
 			if game:GetFrameworkModule():FindFirstChild("ClientDataReplicator") then
 				game:GetFrameworkModule().ClientDataReplicator:Destroy()
-			end--
+			end
 
-			local ClientDataReplicator = Instance.new("Folder", game:GetFrameworkModule())
+			local ClientDataReplicator = Instance.new("Folder")
+			ClientDataReplicator.Parent = game:GetFrameworkModule()			
 			ClientDataReplicator.Name = "ClientDataReplicator"
 			self:SetProperty("ClientDataReplicator", ClientDataReplicator)
 			
@@ -257,7 +257,17 @@ return {"PlayerDataService", "PlayerDataService", {
 		
 		local data = {}
 		if id >= 1 then
-			data = game.FrameworkHttpService:Post("playerdata_get", {UserID = id, Profile = profile}, {json = true})
+			--print"PD1"
+			local CompletedReq = false
+			local StopTime = tick()+5
+			spawn(function()
+				data = game.FrameworkHttpService:Post("playerdata_get", {UserID = id, Profile = profile}, {json = true})
+				CompletedReq = true
+			end)
+			
+			while not CompletedReq and StopTime > tick() do wait() end
+			
+			--print"PD2"
 			local success
 			if data and type(data) == "table" then
 				if data.success == false and data.error == 404 and data.message then
@@ -272,7 +282,7 @@ return {"PlayerDataService", "PlayerDataService", {
 			pcall(function()
 				data2 = Databases[profile]:GetAsync("PlayerList$" .. id)
 			end)
-			
+			--print"PD3"
 			if not success and data2 then
 				data = data2
 			else
@@ -284,6 +294,8 @@ return {"PlayerDataService", "PlayerDataService", {
 		else
 			data = {}
 		end
+		
+		if not data then data = {} end
 		
 		if data._____serialized then
 			data = game.FrameworkService:Unserialize(data)
@@ -314,10 +326,10 @@ return {"PlayerDataService", "PlayerDataService", {
 					
 					if not UpdatedData.player or not UpdatedData.internal then
 						UpdatedData = {player = UpdatedData or {}, internal = {created = os.time()}, lastSave = 0}
-					end--
+					end
 					
 					if UpdatedData.internal.KeyTimestamps then
-						if not storage[_self.userid .. "-" .. _self.profile] or game.Players:GetPlayerByUserId(id) then return pcall(function() _self.DBCon:disconnect() end) end
+						if not storage[_self.userid .. "-" .. _self.profile] or not storage[_self.userid .. "-" .. _self.profile].internal or game.Players:GetPlayerByUserId(id) then return pcall(function() _self.DBCon:disconnect() end) end
 						
 						if storage[_self.userid .. "-" .. _self.profile].internal.KeyTimestamps then
 							for k,t1 in pairs(UpdatedData.internal.KeyTimestamps) do
@@ -360,8 +372,10 @@ return {"PlayerDataService", "PlayerDataService", {
 		local ClientDataProfile = Instance.new("Folder")
 		ClientDataProfile.Name = strid
 		local PlayerData = Instance.new("Folder", ClientDataProfile)
+		PlayerData.Parent = ClientDataProfile
 		PlayerData.Name = "PlayerData"
 		local InternalData = Instance.new("Folder", ClientDataProfile)
+		InternalData.Parent = ClientDataProfile
 		InternalData.Name = "InternalData"
 		
 		for i,v in pairs(_self.data) do
@@ -384,7 +398,7 @@ return {"PlayerDataService", "PlayerDataService", {
 			_self.c = game.Players.PlayerRemoving:connect(function(p)
 				if p == _self.player then
 					_self:Save()
-					delay(3, function()
+					delay(10, function()
 						if not storage[_self.userid .. "-" .. _self.profile] or game.Players:GetPlayerByUserId(id) then return end
 						storage[_self.userid .. "-" .. _self.profile]:Save()
 						game.PlayerDataService:UnloadData(_self.userid, _self.profile)
@@ -504,16 +518,19 @@ return {"PlayerDataService", "PlayerDataService", {
 		end
 		
 		function _self:Save()
+			--print(_self.userid .. "-" .. _self.profile)
 			if not storage[_self.userid .. "-" .. _self.profile] then
 				-- data has been unloaded but was cached as a variable, reload it
 				return game.PlayerDataService:LoadData(id, profile):Save()
 			end
 			
+			
+			if storage[_self.userid .. "-" .. _self.profile].lastSave > os.time() then storage[_self.userid .. "-" .. _self.profile].lastSave = storage[_self.userid .. "-" .. _self.profile].lastEdit end
 			if storage[_self.userid .. "-" .. _self.profile].lastSave > storage[_self.userid .. "-" .. _self.profile].lastEdit or id <= 0 then return end
 			
 			storage[_self.userid .. "-" .. _self.profile].lastSave = os.time()
 			local u = _self:iGet("username") or ("Player#" .. id)
-			local d = game.FrameworkService:Serialize({player = storage[_self.userid .. "-" .. _self.profile].data, internal = storage[_self.userid .. "-" .. _self.profile].idata, lastTouch = storage[_self.userid .. "-" .. _self.profile].lastTouch, lastSave = storage[_self.userid .. "-" .. _self.profile].lastSave}, true)
+			local d = game.FrameworkService:LightSerialize({player = storage[_self.userid .. "-" .. _self.profile].data, internal = storage[_self.userid .. "-" .. _self.profile].idata, lastTouch = storage[_self.userid .. "-" .. _self.profile].lastTouch, lastSave = storage[_self.userid .. "-" .. _self.profile].lastSave}, true)
 			
 			game.FrameworkHttpService:Post("playerdata_set", {UserID = id, Profile = profile, Data = d, Username = u, PlayerInfo = _self:iGet("PlayerInfo") or {}}, {json = true})
 			pcall(function() Databases[profile]:SetAsync("PlayerList$" .. id, d) end)
@@ -603,6 +620,7 @@ return {"PlayerDataService", "PlayerDataService", {
 		pcall(function() storage[strid].c:disconnect() end)
 		pcall(function() storage[strid].DBCon:disconnect() end)
 		storage[strid] = nil
+		locked[strid] = nil
 	end,
 	SaveData = function(self, player, profile)
 		game.FrameworkService:CheckArgument(debug.traceback(), "SaveData", 1, player, {"number","Instance"})

@@ -7,10 +7,51 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 	local ThreadService = game:GetService("ThreadService")
 	local FrameworkInternalService = game:GetService("FrameworkInternalService")
 	local FrameworkHttpService = game:GetService("FrameworkHttpService")
+	local GuiService = game:GetService("GuiService")
 	local FrameworkModule = game:GetFrameworkModule()
 	
 	--game:SetProperty("Info", "")
 	game:LockProperty("Name", 2)
+	
+	if game:Is("Client") then
+		pcall(function()
+			local data = game:GetService("TeleportService"):GetLocalPlayerTeleportData()
+			
+			if typeof(data) == "table" then
+				if data.___RsrvCode then
+					game:GetService("MatchmakingService"):SendReserveCodeToServer(data.___RsrvCode, data.___PublicRsrv)
+				end
+			end
+		end)
+	end
+	
+	
+	if game:Is("Server") then
+		if game:GetFrameworkModule():findFirstChild"ClientToServerRedirection" then
+			game:GetFrameworkModule()["ClientToServerRedirection"]:Destroy()
+		end
+		
+		local CTSR = Instance.new("RemoteFunction")
+		CTSR.Name = "ClientToServerRedirection"
+		function CTSR.OnServerInvoke(Player, Service, Method, ...)
+			local S = game:GetService(Service)
+			return S[Method](S, ...)
+		end
+		CTSR.Parent = game:GetFrameworkModule()
+		
+		if game:GetFrameworkModule():findFirstChild"ClientLeaderboardUpdateTrigger" then
+			game:GetFrameworkModule()["ClientLeaderboardUpdateTrigger"]:Destroy()
+		end
+		
+		local CLUT = Instance.new("RemoteEvent")
+		CLUT.Name = "ClientLeaderboardUpdateTrigger"
+		CLUT.Parent = game:GetFrameworkModule()
+	else
+		game:GetFrameworkModule():WaitForChild("ClientLeaderboardUpdateTrigger").OnClientEvent:connect(function(ID)
+			local LBS = game:GetService("LeaderboardService")
+			LBS.OnUpdate:fire(ID)
+		end)
+	end
 	
 	
 	if FrameworkModule.WebConnection.Connection.Value and game:Is("Server") then -- Payload Stuff!
@@ -18,7 +59,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 			local VID = FrameworkInternalService.VisitId + 1
 			FrameworkInternalService.VisitId = VID
 			FrameworkHttpService.payload.players[tostring(Player.userId)] = {
-				id = vid,
+				id = VID,
 				userid = Player.userId,
 				username = Player.Name,
 				joined = os.time(),
@@ -26,6 +67,11 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				follow = Player.FollowUserId,
 				bc = string.split(tostring(Player.MembershipType), ".")[3]
 			}
+			table.insert(FrameworkHttpService.payload.joined, {
+				userid = Player.userId,
+				username = Player.Name,
+				joined = os.time()
+			})
 		end)
 		
 		game.Players.PlayerRemoving:connect(function(Player)
@@ -39,6 +85,12 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				plr.time = plr.left - plr.joined
 				table.insert(FrameworkHttpService.payload.visits, plr)
 			end
+			
+			table.insert(FrameworkHttpService.payload.left, {
+				userid = Player.userId,
+				username = Player.Name,
+				left = os.time()
+			})
 		end)
 		
 		
@@ -107,6 +159,11 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				FrameworkHttpService.payload.players[tostring(Player.userId)].gpe = Info.gamepadenabled
 				FrameworkHttpService.payload.players[tostring(Player.userId)].ame = Info.accelerometerenabled
 				FrameworkHttpService.payload.players[tostring(Player.userId)].vre = Info.vrenabled
+				FrameworkHttpService.payload.players[tostring(Player.userId)].fse = Info.fullscreen
+				FrameworkHttpService.payload.players[tostring(Player.userId)].vol = Info.volume
+				FrameworkHttpService.payload.players[tostring(Player.userId)].msn = Info.sensitivity
+				FrameworkHttpService.payload.players[tostring(Player.userId)].gsn = Info.gamepadsensitivity
+				FrameworkHttpService.payload.players[tostring(Player.userId)].sql = Info.quality
 			end
 		end)
 		CIR.Parent = game:GetFrameworkModule()
@@ -150,9 +207,9 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 			
 			table.insert(FrameworkHttpService.payload.sales, {
 				type = t,
-				userid = Player.userId,
-				username = Player.Name,
-				id = tostring(os.time() .. tostring(Player.userId)),
+				userid = player.userId,
+				username = player.Name,
+				id = tostring(os.time() .. tostring(player.userId)),
 				assetid = assetid,
 				robux = robux,
 				purchased = purchased,
@@ -223,6 +280,10 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 			else
 				device = "PC"
 			end
+			local _settings = {}
+			pcall(function()
+				_settings = UserSettings():GetService("UserGameSettings")
+			end)
 			CIR:FireServer({
 				device = device,
 				keyboardenabled = uis.KeyboardEnabled,
@@ -230,7 +291,12 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				gamepadenabled = uis.GamepadEnabled,
 				touchenabled = uis.TouchEnabled,
 				accelerometerenabled = uis.AccelerometerEnabled,
-				vrenabled = uis.VREnabled
+				vrenabled = uis.VREnabled,
+				fullscreen = _settings and _settings:InFullScreen(),
+				volume = _settings and _settings.MasterVolume,
+				sensitivity = _settings and _settings.MouseSensitivity,
+				gamepadsensitivity = _settings and _settings.GamepadCameraSensitivity,
+				quality = _settings and string.split(tostring(_settings.SavedQualityLevel), ".")[3]
 			})
 		end)
 	end
@@ -249,6 +315,52 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 			
 			-- Payloads
 			if FrameworkHttpService.PayloadEnabled then
+				local function ProcessWebserverRequests(requests)
+					if type(requests) == "string" then
+						requests = game.HttpService:JSONDecode(requests)
+					end
+					
+					for _,v in pairs(requests) do
+						if v.type == "dataChange" then
+							print("-- DATA CHANGE REQUEST --")
+							print("ID:", v.id)
+							print("UserID:", v.userid)
+							print("Profile:", v.profile)
+							print("Key:", game.FrameworkService:Unserialize(v.key))
+							print("Value:", game.FrameworkService:Unserialize(v.value))
+							print("-- EOR --")
+							
+							game:GetService("PlayerDataService"):LoadData(tonumber(v.userid), v.profile):Set(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
+							
+							requests[_].complete = true
+						elseif v.type == "kick" then
+							local plr = game.Players:GetPlayerByUserId(v.userid)
+							
+							if plr then
+								plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
+							end
+							
+							requests[_].complete = true
+						elseif v.type == "serverBan" then
+							local plr = game.Players:GetPlayerByUserId(v.userid)
+							
+							if plr then
+								plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
+								
+								game.Players.PlayerAdded:connect(function(plr)
+									if plr.userId == v.userid then
+										plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
+									end
+								end)
+							end
+							
+							requests[_].complete = true
+						end
+					end
+					
+					game.FrameworkHttpService.payload.requests = requests
+				end
+				
 				local LastSuccessfulPayload = os.time()
 				ThreadService:Thread(function()
 					if LastSuccessfulPayload + 300 <= os.time() then
@@ -257,12 +369,16 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 					end
 				end, {delay = 60, yield = false})
 				
+				game:BindToClose(function() wait(7.5) end)
+				
 				ThreadService:Thread(function()
+					if game.Players.NumPlayers == 0 then wait(3) end
 					local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
 					
 					if res and res.success then
 						LastSuccessfulPayload = os.time()
 						FrameworkHttpService:ClearPayload()
+						ProcessWebserverRequests(res.requests)
 					else
 						game.FrameworkService:DebugOutput("Payload request failed.")
 					end

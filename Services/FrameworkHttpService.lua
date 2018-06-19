@@ -5,6 +5,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require = a, b, c, d, e, f, g, h, i, j, k, l
 
 		self:SetProperty("HttpEnabled", false)
+		self:SetProperty("HttpFailedInitialization", false)
 		self:SetProperty("HttpConnected", false)
 		self:SetProperty("Ready", false)
 		self:SetProperty("_", game:GetService("HttpService"))
@@ -18,6 +19,8 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		self:SetProperty("CounterServiceRefetch", 60)
 		self:SetProperty("FailedRequestRepeatDelay", 30)
 		self:SetProperty("CachedItemExpieryTime", 300)
+		self:SetProperty("MatchmakingCache", 15)
+		self:SetProperty("ParamCache", 60)
 		self:SetProperty("PayloadEnabled", false)
 		
 		local function lock()
@@ -33,9 +36,11 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 			self:LockProperty("CounterServiceRefetch", 2)
 			self:LockProperty("FailedRequestRepeatDelay", 2)
 			self:LockProperty("CachedItemExpieryTime", 2)
+			self:LockProperty("MatchmakingCache", 2)
+			self:LockProperty("ParamCache", 2)
 			self:LockProperty("HttpConnected", 2)
 		end
-		--
+		
 		if game:Is("Server") and game:GetFrameworkModule().WebConnection.Connection.Value then
 			spawn(function()
 				if game:GetFrameworkModule():FindFirstChild("SID") then
@@ -44,33 +49,50 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				
 				game:SetProperty("Info", "")
 				local passed, msg = pcall(function()
-					local x, e = self:Get("server", {json=true, bypassConnectionLock=true, bypassWaiting=true})
-					if type(x) ~= "table" then return "nah" end
-					
-					game:SetProperty("Info", x.Info or "")
-					game:LockProperty("Info", 2)
-					game.FrameworkInternalService:SetProperty("ServerId", x.ServerId or 0)
-					game.FrameworkInternalService:LockProperty("ServerId", 2)
-					
-					self:SetProperty("HttpConnected", true)
-					
-					self.PayloadDelay = x.PayloadDelay
-					self.AutosaveDelay = x.AutosaveDelay
-					self.UnloadDelay = x.UnloadDelay
-					self.StorageServicePerMin = x.StorageServicePerMin
-					self.StorageServiceCap = x.StorageServiceCap
-					self.CounterServicePerMin = x.CounterServicePerMin
-					self.CounterServiceCap = x.CounterServiceCap
-					self.FailedRequestRepeatDelay = x.FailedRequestRepeatDelay
-					self.CachedItemExpieryTime = x.CachedItemExpieryTime
-					self.CounterServiceRefetch = x.CounterServiceRefetch--
-					self.PayloadEnabled = true
-					
-					local SID = Instance.new("StringValue", game:GetFrameworkModule())
-					SID.Name = "SID"
-					SID.Value = game.FrameworkInternalService.ServerId
-					
-					self:SetProperty("Ready", true)
+					for i = 1,3 do
+						local x, e, c
+						spawn(function() x, e = self:Get("server", {json=true, bypassConnectionLock=true, bypassWaiting=true}) c = true end)
+						local tm = tick() + 3
+						while not c and tm > tick() do wait() end
+						
+						if type(x) ~= "table" or not x.ServerId and i < 3 then
+							wait(1)
+						elseif type(x) ~= "table" or not x.ServerId and i == 3 then
+							self:SetProperty("HttpFailedInitialization", true)
+							
+							return "nah"
+						else
+							game:SetProperty("Info", x.Info or "")
+							game:LockProperty("Info", 2)
+							game.FrameworkInternalService:SetProperty("ServerId", x.ServerId or 0)
+							game.FrameworkInternalService:LockProperty("ServerId", 2)
+							
+							self:SetProperty("HttpConnected", true)
+							
+							self.PayloadDelay = x.PayloadDelay
+							self.AutosaveDelay = x.AutosaveDelay
+							self.UnloadDelay = x.UnloadDelay
+							self.StorageServicePerMin = x.StorageServicePerMin
+							self.StorageServiceCap = x.StorageServiceCap
+							self.CounterServicePerMin = x.CounterServicePerMin
+							self.CounterServiceCap = x.CounterServiceCap
+							self.FailedRequestRepeatDelay = x.FailedRequestRepeatDelay
+							self.CachedItemExpieryTime = x.CachedItemExpieryTime
+							self.CounterServiceRefetch = x.CounterServiceRefetch
+							self.MatchmakingCache = x.MatchmakingCache
+							self.ParamCache = x.ParamCache
+							self.PayloadEnabled = true
+							
+							local SID = Instance.new("StringValue")
+							SID.Parent = game:GetFrameworkModule()
+							SID.Name = "SID"
+							SID.Value = game.FrameworkInternalService.ServerId
+							
+							self:SetProperty("Ready", true)
+							
+							return true
+						end
+					end
 				end)
 				
 				if passed and passed ~= "nah" then
@@ -83,9 +105,11 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 						game.FrameworkInternalService:LockProperty("ServerId", 2)
 					end)
 					
-					local SID = Instance.new("StringValue", game:GetFrameworkModule())
+					local SID = Instance.new("StringValue")
+					SID.Parent = game:GetFrameworkModule()
 					SID.Name = "SID"
 					SID.Value = game.FrameworkInternalService.ServerId
+					
 					
 					if msg:lower() ~= "http requests are not enabled" then
 						self.HttpEnabled = true
@@ -101,17 +125,51 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				lock()--
 			end)
 		elseif game:Is("Local") and game:GetFrameworkModule().WebConnection.Connection.Value then
-			game:SetProperty("Info", "PID=" .. game.PlaceId .. "&SID=" .. game:GetFrameworkModule():WaitForChild("SID").Value)
-			game:LockProperty("Info", 2)
-			game.FrameworkInternalService:SetProperty("ServerId", game:GetFrameworkModule().SID.Value)
-			game.FrameworkInternalService:LockProperty("ServerId", 2)
-			
-			lock()
+			local SID = game:GetFrameworkModule():WaitForChild("SID", 5)
+			if SID then
+				game:SetProperty("Info", "PID=" .. game.PlaceId .. "&SID=" .. SID.Value)
+				game:LockProperty("Info", 2)
+				game.FrameworkInternalService:SetProperty("ServerId", game:GetFrameworkModule().SID.Value)
+				game.FrameworkInternalService:LockProperty("ServerId", 2)
+				
+				self:SetProperty("Ready", true)
+				
+				game:GetFrameworkModule().WebConnection.ApiKey.Value = ""
+				game:GetFrameworkModule().WebConnection.GameKey.Value = ""
+				game:GetFrameworkModule().WebConnection.SecretKey.Value = ""
+				
+				self:SetProperty("HttpFailedInitialization", true)
+				
+				lock()
+			else
+				game:SetProperty("Info", "PID=" .. game.PlaceId)
+				game:LockProperty("Info", 2)
+				game.FrameworkInternalService:SetProperty("ServerId", 0)
+				game.FrameworkInternalService:LockProperty("ServerId", 2)
+				
+				self:SetProperty("Ready", true)
+				
+				game:GetFrameworkModule().WebConnection.ApiKey.Value = ""
+				game:GetFrameworkModule().WebConnection.GameKey.Value = ""
+				game:GetFrameworkModule().WebConnection.SecretKey.Value = ""
+				
+				self:SetProperty("HttpFailedInitialization", true)
+				
+				lock()
+			end
 		else
 			game:SetProperty("Info", "PID=" .. game.PlaceId)
 			game:LockProperty("Info", 2)
 			game.FrameworkInternalService:SetProperty("ServerId", 0)
 			game.FrameworkInternalService:LockProperty("ServerId", 2)
+			
+			self:SetProperty("Ready", true)
+			
+			game:GetFrameworkModule().WebConnection.ApiKey.Value = ""
+			game:GetFrameworkModule().WebConnection.GameKey.Value = ""
+			game:GetFrameworkModule().WebConnection.SecretKey.Value = ""
+			
+			self:SetProperty("HttpFailedInitialization", true)
 			
 			lock()
 		end
@@ -121,38 +179,56 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 	end,
 	WaitUntilReady = function(self)
 		if not self.Ready then
-			repeat wait() until self.Ready
+			repeat wait() until self.Ready or self.HttpFailedInitialization
 		end
 		
-		wait()
+		--wait()
 	end,
 	Get = function(self, url, opt)
 		if not opt then opt = {} end
 		
 		
 		if not opt.bypassWaiting then self:WaitUntilReady() end
+		if self.HttpFailedInitialization then return game:GetService("FrameworkService"):DebugOutput("FrameworkHttpService Declined GET", url, self._:JSONEncode(opt), "~ Reason: ", "FrameworkHttpService Initialization Failure (Xeptix Framework Web Servers may be down!)") end
 		
 		game.FrameworkService:LockServer(debug.traceback(), "Get")
 		if not opt.bypassConnectionLock then
 			game.FrameworkService:LockConnected(debug.traceback(), "Get")
 		end
 		local result
-		local s, e = pcall(function()
-			result = self._:GetAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
-				apikey = game:GetFrameworkModule().WebConnection.ApiKey.Value,
-				gamekey = game:GetFrameworkModule().WebConnection.GameKey.Value,
-				secret = game:GetFrameworkModule().WebConnection.SecretKey.Value,
-				ServerId = game.FrameworkInternalService.ServerId,
-				JobId = game.JobId or "0",
-				PlaceId = game.PlaceId or "0",
-				CreatorId = game.CreatorId or "0",
-				CreatorType = tostring(game.CreatorType),
-				VIPServerId = game.VIPServerId or 0,
-				VIPServerOwnerId = game.VIPServerOwnerId or 0,
-				FRV = game.FrameworkService.Version,
-				FRB = game.FrameworkService.Build
-			}))), true)
+		local finished, done = game:CreateSignal()
+		delay(url == "server" and 2.5 or 5, function()
+			if not done then
+				finished:fire()
+				done = true
+			end
 		end)
+		local e
+		spawn(function()
+			local s, ee = pcall(function()
+				result = self._:GetAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
+					apikey = game:GetFrameworkModule().WebConnection.ApiKey.Value,
+					gamekey = game:GetFrameworkModule().WebConnection.GameKey.Value,
+					secret = game:GetFrameworkModule().WebConnection.SecretKey.Value,
+					ServerId = game.FrameworkInternalService.ServerId,
+					JobId = game.JobId or "0",
+					PlaceId = game.PlaceId or "0",
+					CreatorId = game.CreatorId or "0",
+					CreatorType = tostring(game.CreatorType),
+					VIPServerId = game.VIPServerId or 0,
+					VIPServerOwnerId = game.VIPServerOwnerId or 0,
+					Version = game.PlaceVersion or 0,
+					FRV = game.FrameworkService.Version,
+					FRB = game.FrameworkService.Build
+				}))), true)
+			end)
+			
+			e = ee
+			finished:fire()
+			done = true
+		end)
+		
+		finished:wait()
 		
 		if result and opt.json then
 			if not pcall(function()
@@ -170,30 +246,53 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		if not opt.bypassWaiting then self:WaitUntilReady() end
 		
 		game.FrameworkService:LockServer(debug.traceback(), "Post")
+		if self.HttpFailedInitialization then return game:GetService("FrameworkService"):DebugOutput("FrameworkHttpService Declined POST", url, self._:JSONEncode(opt), self._:JSONEncode(data), "~ Reason: ", "FrameworkHttpService Initialization Failure (Xeptix Framework Web Servers may be down!)") end
 		if not opt.bypassConnectionLock then
 			game.FrameworkService:LockConnected(debug.traceback(), "Post")
 		end
 		
 		
+		
 		local result
-		local s, e = pcall(function()
-			result = self._:PostAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
-				apikey = game:GetFrameworkModule().WebConnection.ApiKey.Value,
-				gamekey = game:GetFrameworkModule().WebConnection.GameKey.Value,
-				secret = game:GetFrameworkModule().WebConnection.SecretKey.Value,
-				ServerId = game.FrameworkInternalService.ServerId,
-				JobId = game.JobId or "0",
-				PlaceId = game.PlaceId or "0",
-				CreatorId = game.CreatorId or "0",
-				CreatorType = tostring(game.CreatorType),
-				VIPServerId = game.VIPServerId or 0,
-				VIPServerOwnerId = game.VIPServerOwnerId or 0,
-			}))), self._:JSONEncode(data))
-		end) 
+		local finished, done = game:CreateSignal()
+		delay(url == "server" and 2.5 or 5, function()
+			if not done then
+				finished:fire()
+				done = true
+			end
+		end)
+		local e
+		spawn(function()
+			local s, ee = pcall(function()
+				result = self._:PostAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
+					apikey = game:GetFrameworkModule().WebConnection.ApiKey.Value,
+					gamekey = game:GetFrameworkModule().WebConnection.GameKey.Value,
+					secret = game:GetFrameworkModule().WebConnection.SecretKey.Value,
+					ServerId = game.FrameworkInternalService.ServerId,
+					JobId = game.JobId or "0",
+					PlaceId = game.PlaceId or "0",
+					CreatorId = game.CreatorId or "0",
+					CreatorType = tostring(game.CreatorType),
+					VIPServerId = game.VIPServerId or 0,
+					VIPServerOwnerId = game.VIPServerOwnerId or 0,
+					Version = game.PlaceVersion or 0,
+					FRV = game.FrameworkService.Version,
+					FRB = game.FrameworkService.Build
+				}))), self._:JSONEncode(data))
+			end) 
+			
+			e = ee
+			finished:fire()
+			done = true
+		end)
+		
+		finished:wait()
 		
 		if result and opt.json then
 			if not pcall(function()
+				local _t = tick()
 				result = self._:JSONDecode(result)
+				--print("Decoding:",tick()-_t)
 			end) then
 				result = nil
 			end
@@ -244,7 +343,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		game.FrameworkService:CheckArgument(debug.traceback(), "Decode", 1, url, "string")
 		return self._:UrlDecode(url)
 	end,
-	payload = {players = {}, sales = {}, visits = {}, errors = {}},
+	payload = {players = {}, sales = {}, visits = {}, errors = {}, requests = {}, joined = {}, left = {}, params = {}, _rc = "", _rp = 0, _mp = game.Players.MaxPlayers},
 	ce = {},--
 	GetPayload = function(self)
 		self.payload.time = os.time()
@@ -254,5 +353,9 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		self.payload.sales = {}
 		self.payload.visits = {}
 		self.payload.errors = {}
+		self.payload.requests = {}
+		self.payload.params = {}
+		self.payload.joined = {}
+		self.payload.left = {}
 	end
 }}--

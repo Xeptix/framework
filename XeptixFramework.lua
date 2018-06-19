@@ -1,4 +1,4 @@
--- Xeptix Framework 3.0.1b (build 309; debug enabled)
+-- Xeptix Framework 3.1 (build 458; debug enabled)
 -- Documentation: https://github.com/xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
@@ -25,7 +25,7 @@
 
 
 FrameworkModule = game:findFirstChild(".xeptixframework.", true).Parent
-Original = {["require"] = require, ["print"] = print, ["Instance"] = Instance, ["typeof"] = typeof, ["type"] = type, ["game"] = game, ["Game"] = game, ["Workspace"] = workspace, ["workspace"] = workspace, ["math"] = math, ["table"] = table, ["string"] = string}
+Original = {["tostring"] = tostring, ["require"] = require, ["print"] = print, ["Instance"] = Instance, ["typeof"] = typeof, ["type"] = type, ["game"] = game, ["Game"] = game, ["Workspace"] = workspace, ["workspace"] = workspace, ["math"] = math, ["table"] = table, ["string"] = string}
 FrameworkServices = {}
 FrameworkJobs = {}
 superLockedProperties = {}
@@ -179,6 +179,13 @@ ModifiedObjects = {
 		end,
 		waitForChildWithProperty = function(self, ...)--
 			return rawget(self, "WaitForChildWithProperty")(self, ...)
+		end,
+		GetRandomChild = function(self)
+			local Children = self:GetChildren()
+			
+			if #Children > 0 then
+				return Children[math.random(#Children)]
+			end
 		end,
 		Recursive = function(self, callback)
 			game.FrameworkService:CheckArgument(debug.traceback(), "Recursive", 1, callback, "function")
@@ -420,6 +427,9 @@ ModifiedObjects = {
 				return Object(rawget(self, "____o"):GetService(ServiceName))
 			end
 		end,
+		IsFrameworkServiceLoaded = function(self, ServiceName)
+			return FrameworkServices[ServiceName] and true
+		end,
 		FindService = function(self, ServiceName)
 			if FrameworkServices[ServiceName] then
 				return FrameworkServices[ServiceName] or false
@@ -456,6 +466,26 @@ ModifiedObjects = {
 			end  
 			
 			return false
+		end,
+		CreateSignal = function(self)
+			return RbxUtility:CreateSignal()
+		end,
+		GetDevice = function(self)
+			local device = nil
+			pcall(function()
+				local uis = game:GetService("UserInputService")
+				if uis.VREnabled then
+					device = "VR"
+				elseif uis.TouchEnabled then
+					device = "Mobile"
+				elseif uis.GamepadEnabled then
+					device = "Console"
+				else
+					device = "PC"
+				end
+			end)
+			
+			return device
 		end
 	},
 	["Players"] = {
@@ -559,6 +589,7 @@ function Object(Obj)
 	
 	
 	Modified.____o = Obj
+	Modified.XeptixFrameworkObject = true
 	Modified.____l = {}
 	Modified.____e = {}
 	Modified.____c = {}
@@ -593,12 +624,12 @@ function Object(Obj)
 						value = function(self, ...)
 							local a = {...}
 							for i = 1,#a do
-								local ot = typeof(a[i])
-								if ot == "Instance" and a[i]:IsA("XeptixObject") then
+								local ot = Original.typeof(a[i])
+								if ot == "table" and a[i].____o then
 									a[i] = a[i].____o
 								elseif ot == "table" then
 									table.recursive(a[i], function(t, k, v)
-										if typeof(v) == "Instance" and v:IsA("XeptixObject") then
+										if Original.typeof(v) == "table" and v.____o then
 											t[k] = v.____o
 										end
 									end)
@@ -613,7 +644,7 @@ function Object(Obj)
 									b[i] = Object(b[i])
 								elseif ot == "table" then
 									table.recursive(b[i], function(t, k, v)
-										if typeof(v) == "Instance" then
+										if Original.typeof(v) == "Instance" then
 											t[k] = Object(v)
 										end
 									end)
@@ -625,7 +656,7 @@ function Object(Obj)
 					elseif vt == "Instance" then
 						value = Object(value)
 					elseif vt == "RBXScriptSignal" then
-						value = self.____e[index] or value
+						value = rawget(self, "____e")[index] or value
 					end
 				end) then
 					ferror(debug.traceback(), index .. " is not a valid member of " .. self.ClassName, 0)
@@ -646,15 +677,20 @@ function Object(Obj)
 					local r_ = rawget(self, "_receipts")
 					if r_ then
 						table.insert(r_, value)
+						rawset(self, "_receipts", r_)
 					else
 						rawset(self, "_receipts", {value})
 						ms[index] = function(Receipt)
-							local Decision = Enum.ProductPurchaseDecision.PurchaseGranted
+							local Decision = Enum.ProductPurchaseDecision.NotProcessedYet
 							for _,v in pairs(oms._receipts) do
 								local r = v(Receipt)
-								if r ~= Enum.ProductPurchaseDecision.PurchaseGranted and r ~= "framework.internal" then
-									Decision = Enum.ProductPurchaseDecision.NotProcessedYet
+								if Decision ~= r and (r == Enum.ProductPurchaseDecision.PurchaseGranted or r == "framework.internal") then
+									Decision = r
 								end
+							end
+							
+							if Decision == Enum.ProductPurchaseDecision.PurchaseGranted then
+								
 							end
 							
 							return Decision
@@ -811,8 +847,9 @@ end
 
 function CreateService(Name, Class, Service, Hidden)
 	local S
-	pcall(function() S = game:FindFirstChild(Name) end)
-	S = S or Object(Instance.new(Hidden == true and "Snap" or "Motor", game))
+	pcall(function() S = Object(Original.game:GetService(Name)) end)
+	S = S or Object(Instance.new(Hidden == true and "Snap" or "Motor"))
+	S.Parent = game
 	S.Archivable = false
 	FrameworkServices[Name] = S
 	FrameworkServices[Class] = S
@@ -849,7 +886,7 @@ end
 function LoadService(name)
 	local Service = require(FrameworkModule.Services[name])
 	local ServiceObject = CreateService(Service[1], Service[2], Service[3], Service[4])
-	ServiceObject:_StartService(Object(game), Object(game), Object(workspace), Object(workspace), table, string, math, typeof, type, Instance, print, require, ferror)
+	ServiceObject:_StartService(Object(game), Object(game), Object(workspace), Object(workspace), table, string, math, typeof, type, Instance, print, require, ferror, tostring)
 
 	return ServiceObject
 end
@@ -935,6 +972,20 @@ table = NewMeta(Original.table, {
 				table.recursive(v, f)
 			end
 		end
+	end,
+	random = function(t)
+		game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
+		
+		if #t == 0 then
+			local x = {}
+			for _,v in pairs(t) do table.insert(x,v) end
+			
+			if #x == 0 then return end
+			
+			return x[math.random(#x)]
+		end
+		
+		return t[math.random(#t)]
 	end
 	
 })
@@ -988,14 +1039,42 @@ type = function(x)
 		return Original.type(x)
 	end
 end
+local customInstances = {}
 Instance = {
 	new = function(c, p)
+		local custom = customInstances[tostring(c)]
+		if custom then
+			local i = Object(Instance.new("Folder"))
+			i:SetProperty("ClassName", tostring(c))
+			i:SetProperty("SuperClassName", tostring(c))
+			if typeof(custom) == "table" then
+				for _,v in pairs(custom) do
+					if typeof(v) == "function" then
+						i:SetMethod(tostring(_), v)
+					elseif typeof(v):lower() == "signal" then
+						i:SetEvent(tostring(_))
+					else
+						i:SetProperty(tostring(_), v)
+					end
+				end
+			elseif typeof(custom) == "function" then
+				custom(i)
+			end
+			
+			i.Parent = p
+			return i
+		end
+		
 		if Original.typeof(p) == "table" and p.XeptixFrameworkObject then
 			p = p.____o
 		end
 		
-		local x = Original.Instance.new(c, p)
+		local x = Original.Instance.new(tostring(c))
+		x.Parent = p -- check rbxdev, it is inefficient to use the parent argument in Instance.new - this helps speed your game up! :D
 		return Object(x)
+	end,
+	create = function(c, p)
+		customInstances[tostring(c)] = p ~= nil and p or true
 	end
 }
 print = function(...)
@@ -1020,6 +1099,9 @@ require = function(module)
 	return Original.require(module)
 end
 ferror = function(stack, err)
+	-- NOTE: if you got an error here, it is NOT a framework error. Ignore all lines in the stack trace that go to the framework's scripts. Typically the very bottom script(s) are the ones where the actual error was triggered. More info on this in documentation.
+	if typeof(stack) ~= "string" then error(err or "???", 0) end
+	
 	local yourStack
 	for line in stack:gmatch("([^\r\n]*)[\r\n]") do
 		if not line:find(FrameworkModule:GetFullName()) and line ~= "Stack End" and line ~= "Stack Begin" and line ~= "" then
@@ -1031,6 +1113,13 @@ ferror = function(stack, err)
 	-- NOTE: if you got an error here, it is NOT a framework error. Ignore all lines in the stack trace that go to the framework's scripts. Typically the very bottom script(s) are the ones where the actual error was triggered. More info on this in documentation.
 	error(err .. (yourStack and ("\n" .. yourStack) or ""), 0)
 end
+tostring = function(str)
+	if Original.typeof(str) == "table" and str.____o then
+		return Original.tostring(str.____o)
+	end
+	
+	return Original.tostring(str)
+end
 
 
 
@@ -1040,7 +1129,7 @@ FrameworkService = game:StartJob("Core")
 
 
 -- Return the function to modify the environment
-return function(environment)
+return function(sf, environment)
 	environment.game = game
 	environment.Game = game
 	environment.workspace = game.Workspace
@@ -1051,10 +1140,10 @@ return function(environment)
 	environment.type = type
 	environment.typeof = typeof
 	environment.table = table
+	math.randomseed(tick())
 	environment.math = math
 	environment.string = string
-	environment.script = Object(environment.script)
-	environment._xfscript_ = environment.script
+	environment.tostring = tostring
 	
-	return environment
+	sf(0, environment)
 end

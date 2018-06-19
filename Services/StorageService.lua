@@ -3,11 +3,16 @@
 
 local Requests = 100
 local storage = {}
+local StorageDB
 return {"StorageService", "StorageService", {--
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require = a, b, c, d, e, f, g, h, i, j, k, l
 
 		if game:Is("Server") then 
+			pcall(function()
+				StorageDB = game:GetService("DataStoreService"):GetDataStore("XeptixFramework_Storage")
+			end)
+			
 			game.ThreadService:Thread(function()
 				for _,v in pairs(storage) do
 					if v[1] + game.FrameworkHttpService.CachedItemExpieryTime <= os.time() then
@@ -34,11 +39,27 @@ return {"StorageService", "StorageService", {--
 		
 		if Requests <= 0 then repeat wait() until Requests >= 1 end Requests = Requests - 1
 		
-		local result = game.FrameworkHttpService:Post("storage_get", {Key = Key}, {json = true})
-		local data
+		local result 
+		spawn(function() result = game.FrameworkHttpService:Post("storage_get", {Key = Key}, {json = true}) end)
+		local et = tick() + 5
+		while et > tick() and not result do wait() end
+		
+		local data, data2, data2t
+		if StorageDB then
+			pcall(function()
+				data2 = StorageDB:GetAsync(Key)
+				
+				if data2 then
+					data2t = data2[1]
+					data2 = data2[2]
+				end
+			end)
+		end
+		
+		
 		if result and not result.success and result.error == 404 then
 			data = result
-		elseif not result or not result.success then
+		elseif (not result or not result.success) and not data2 then
 			game.FrameworkService:DebugOutput("StorageService get request failed, trying again in " .. game.FrameworkHttpService.FailedRequestRepeatDelay .. " second(s)")
 			wait(game.FrameworkHttpService.FailedRequestRepeatDelay)
 			
@@ -47,8 +68,23 @@ return {"StorageService", "StorageService", {--
 			data = result.value
 		end
 		
+		
+		if (result and result.success) and not data2 then
+			-- nothing
+		elseif data2 and not (result and result.success) then
+			data = data2
+		elseif data2 and (result and result.success) then
+			if (result.ul or 0) < (data2t or 0) then
+				data = data2
+			end
+		end
+		
+		if typeof(data) == "string" and data:find("_____serialized") then
+			data = game.FrameworkService:LightUnserialize(data)
+		end
+		
 		if data._____serialized then
-			data = game.FrameworkService:Unserialize(data)
+			data = game.FrameworkService:LightUnserialize(data)
 		elseif data.error then
 			data = nil
 		end
@@ -71,8 +107,22 @@ return {"StorageService", "StorageService", {--
 		end
 		
 		local oValue = Value
-		local Key, Value = tostring(Key), game.FrameworkService:Serialize(Value, true)
-		local result = game.FrameworkHttpService:Post("storage_set", {Key = Key, Value = Value}, {json = true})
+		local Key, Value = tostring(Key), game.FrameworkService:LightSerialize(Value, true)
+		local result
+		spawn(function() result = game.FrameworkHttpService:Post("storage_set", {Key = Key, Value = Value}, {json = true}) end)
+		local et = tick() + 5
+		while et > tick() and not result do wait() end
+		
+		if StorageDB then
+			local s = true
+			local s,e = pcall(function()
+				StorageDB:SetAsync(Key, {os.time(), Value})
+			end)
+			
+			if (not result or not result.success) and s then
+				result = {success = true}
+			end
+		end
 		
 		if not result or not result.success then
 			game.FrameworkService:DebugOutput("StorageService set request failed, trying again in " .. game.FrameworkHttpService.FailedRequestRepeatDelay .. " second(s)")
