@@ -171,13 +171,19 @@ return {"StorageService", "StorageService", {--
 					if StorageDB then
 						local s = true
 						local s,e = pcall(function()
+							local DaNew
 							StorageDB:UpdateAsync(v, function(Old)
-								local New = f(Old[1])
+								local RawOld = Old or {}
+								local New = f(game.FrameworkService:LightUnserialize(RawOld[1]))
+								
+								DaNew = game.FrameworkService:LightSerialize(New, true)
 
-								self:Set(v, New, true)
-
-								return {os.time(), New}
+								return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 							end)
+							
+							if DaNew then
+								self:Set(v, DaNew, true)
+							end
 						end)
 
 						if not s then print(e) self:Set(v, f(self:Get(v, true))) end
@@ -192,13 +198,19 @@ return {"StorageService", "StorageService", {--
 					if StorageDB then
 						local s = true
 						local s,e = pcall(function()
+							local DaNew
 							StorageDB:UpdateAsync(v, function(Old)
-								local New = f(Old[1])
+								local RawOld = Old or {}
+								local New = f(game.FrameworkService:LightUnserialize(RawOld[1]))
+								
+								DaNew = game.FrameworkService:LightSerialize(New, true)
 
-								self:Set(v, New, true)
-
-								return {os.time(), New}
+								return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 							end)
+							
+							if DaNew then
+								self:Set(v, DaNew, true)
+							end
 						end)
 
 						if not s then print(e) self:Set(v, f(self:Get(v, true))) end
@@ -214,13 +226,19 @@ return {"StorageService", "StorageService", {--
 				if StorageDB then
 					local s = true
 					local s,e = pcall(function()
+						local DaNew
 						StorageDB:UpdateAsync(Keys, function(Old)
-							local New = f(Old[1])
+							local RawOld = Old or {}
+							local New = f(game.FrameworkService:LightUnserialize(RawOld[1]))
+								
+							DaNew = game.FrameworkService:LightSerialize(New, true)
 
-							self:Set(Keys, New, true)
-
-							return {os.time(), New}
+							return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 						end)
+							
+						if DaNew then
+							self:Set(Keys, DaNew, true)
+						end
 					end)
 
 					if not s then print(e) self:Set(Keys, f(self:Get(Keys, true))) end
@@ -233,13 +251,19 @@ return {"StorageService", "StorageService", {--
 				if StorageDB then
 					local s = true
 					local s,e = pcall(function()
+						local DaNew
 						StorageDB:UpdateAsync(Keys, function(Old)
-							local New = f(Old[1])
+							local RawOld = Old or {}
+							local New = f(game.FrameworkService:LightUnserialize(RawOld[1]))
+								
+							DaNew = game.FrameworkService:LightSerialize(New, true)
 
-							self:Set(Keys, New, true)
-
-							return {os.time(), New}
+							return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 						end)
+							
+						if DaNew then
+							self:Set(Keys, DaNew, true)
+						end
 					end)
 
 					if not s then print(e) self:Set(Keys, f(self:Get(Keys, true))) end
