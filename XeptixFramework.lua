@@ -521,7 +521,7 @@ ModifiedObjects = {
 			return string.gsub(format, '[xyz]', function (c)
 				for i = 1,(math.ceil((tick() - math.floor(tick()))*25)) do random() end
 				local v = (c == 'x') and random(0, 0xf) or ((c == 'z') and tostring(symbols[random(#symbols)]) or random(8, 0xb))
-		        return string.format('%x', v)
+		        return c == 'z' and v or string.format('%x', v)
 		    end):upper()
 		end
 	},
