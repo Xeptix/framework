@@ -96,9 +96,10 @@ return {"StorageService", "StorageService", {--
 
 		storage[Key] = {os.time(), data}
 
-		if not storageCon[Key] then
+		if not storageCon[Key] and StorageDB then
 			storageCon[Key] = StorageDB:OnUpdate(Key, function(Value)
 				if storage[Key] and Value then
+					game.StorageService.OnUpdate:fire(Key, Value)
 					storage[Key][1] = Value[1]
 				elseif not storage[Key] then
 					storageCon[Key]:disconnect()
