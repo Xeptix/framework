@@ -1,4 +1,4 @@
--- Xeptix Framework 3.1 (build 460; debug enabled)
+-- Xeptix Framework 3.1 (build 461; debug enabled)
 -- Documentation: https://github.com/xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
@@ -486,6 +486,43 @@ ModifiedObjects = {
 			end)
 
 			return device
+		end,
+		___CachedSnowflakes = {},
+		Snowflake = function(self)
+			if self:Is("Connected") then
+				if #self.___CachedSnowflakes >= 1 then
+					local v = table.remove(self.___CachedSnowflakes, 1)
+
+					return v or self:UUID()
+				else
+					local Snowflakes = game.FrameworkHttpService:Get("snowflake_batch", {json = true})
+					if not Snowflakes or typeof(Snowflakes) ~= "table" or #Snowflakes <= 0 then return self:UUID() end
+
+					self.___CachedSnowflakes = Snowflakes
+
+					local SF = table.remove(self.___CachedSnowflakes, 1)
+
+					return SF or self:UUID()
+				end
+			else
+				return self:UUID()
+			end
+		end,
+		UUID = function(self, format, symbols)
+			if not format or type(format) ~= "string" then
+				format = 'xxxxxxxx-yxxx-yxxx-xxxxxxxxxxxx'
+			end
+
+			if not symbols or type(symbols) ~= "table" or #symbols <= 0 then
+				symbols = {"!","@","#","$","%","^","&","*","(",")","-","_","{","}","[","]","+","/","?",".",">","<",";",":"}
+			end
+
+			local random = math.random
+			return string.gsub(format, '[xyz]', function (c)
+				for i = 1,(math.ceil((tick() - math.floor(tick()))*25)) do random() end
+				local v = (c == 'x') and random(0, 0xf) or ((c == 'z') and tostring(symbols[random(#symbols)]) or random(8, 0xb))
+		        return string.format('%x', v)
+		    end):upper()
 		end
 	},
 	["Players"] = {
