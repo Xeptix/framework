@@ -1,4 +1,4 @@
--- Xeptix Framework 3.1 (build 458; debug enabled)
+-- Xeptix Framework 3.1 (build 460; debug enabled)
 -- Documentation: https://github.com/xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
@@ -47,7 +47,7 @@ ModifiedObjects = {
 	["root"] = {
 		IsA = function(self, ClassName)
 			game.FrameworkService:CheckArgument(debug.traceback(), "IsA", 1, ClassName, "string")
-			
+
 			if ClassName == "XeptixFrameworkService" and self:HasProperty("XeptixFrameworkService") then
 				return true
 			elseif ClassName == "XeptixObject" then
@@ -65,12 +65,12 @@ ModifiedObjects = {
 		FindFirstChild = function(self, ClassName, Recursive)
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, ClassName, "string")
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 2, Recursive, {"boolean", "nil"})
-			
+
 			local O = rawget(self, "____o"):FindFirstChild(ClassName, Recursive)
 			if O then
 				O = Object(O)
 			end
-			
+
 			return O
 		end,
 		findFirstChild = function(self, ...)
@@ -79,14 +79,14 @@ ModifiedObjects = {
 		FindFirstChildOfClass = function(self, ClassName, Recursive)
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, ClassName, "string")
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 2, Recursive, {"boolean", "nil"})
-			
+
 			local O = rawget(self, "____o"):FindFirstChildOfClass(ClassName)
 			if O then
 				O = Object(O)
 			else
 				return self:FindFirstChildWithProperty("ClassName", ClassName, Recursive)
 			end
-			
+
 			return O
 		end,
 		findFirstChildOfClass = function(self, ...)
@@ -95,7 +95,7 @@ ModifiedObjects = {
 		FindFirstChildWithProperty = function(self, Name, Value, Recursive)
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, Name, "string")
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 3, Recursive, {"boolean", "nil"})
-			
+
 			if Recursive then
 				local Obj
 				Object:Recursive(function(v)
@@ -104,7 +104,7 @@ ModifiedObjects = {
 						return
 					end
 				end)
-				
+
 				return Obj
 			else
 				for _,v in pairs(self:GetChildren()) do
@@ -121,24 +121,24 @@ ModifiedObjects = {
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 1, Name, "string")
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 2, Timeout, {"number", "nil"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 3, Recursive, {"boolean", "nil"})
-			
+
 			if Recursive then
 				local Obj
 				local Stop = os.time() + (Timeout or 999999)
 				while not Obj and Stop >= os.time() do
 					Obj = self:FindFirstChild(Name, true)
-					
+
 					if not Obj then wait() end
 				end
-				
+
 				return Obj
 			end
-			
+
 			local O = rawget(self, "____o"):WaitForChild(Name, Timeout)
 			if O then
 				O = Object(O)
 			end
-			
+
 			return O
 		end,
 		waitForChild = function(self, ...)
@@ -148,15 +148,15 @@ ModifiedObjects = {
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 1, Name, "string")
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 2, Timeout, {"number", "nil"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 3, Recursive, {"boolean", "nil"})
-			
+
 			local Obj
 			local Stop = os.time() + (Timeout or 999999)
 			while not Obj and Stop >= os.time() do
 				Obj = self:FindFirstChildOfClass(Name, Recursive)
-				
+
 				if not Obj then wait() end
 			end
-				
+
 			return Obj
 		end,
 		waitForChildOfClass = function(self, ...)
@@ -166,15 +166,15 @@ ModifiedObjects = {
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 1, Name, "string")
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 3, Timeout, {"number", "nil"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 4, Recursive, {"boolean", "nil"})
-			
+
 			local Obj
 			local Stop = os.time() + (Timeout or 999999)
 			while not Obj and Stop >= os.time() do
 				Obj = self:FindFirstChildWithProperty(Name, Value, Recursive)
-				
+
 				if not Obj then wait() end
 			end
-				
+
 			return Obj
 		end,
 		waitForChildWithProperty = function(self, ...)--
@@ -182,64 +182,64 @@ ModifiedObjects = {
 		end,
 		GetRandomChild = function(self)
 			local Children = self:GetChildren()
-			
+
 			if #Children > 0 then
 				return Children[math.random(#Children)]
 			end
 		end,
 		Recursive = function(self, callback)
 			game.FrameworkService:CheckArgument(debug.traceback(), "Recursive", 1, callback, "function")
-			
+
 			local function search(parent)
 				local nextLoop = {}
 				for _,v in pairs(parent:GetChildren()) do
 					if #v:GetChildren() > 0 then
 						table.insert(nextLoop, v)
 					end
-					
+
 					callback(v)
 				end
-				
+
 				for _,v in pairs(nextLoop) do
 					search(v)
 				end
 			end
-			
+
 			search(self)
 		end,
 		CanReadProperty = function(self, name)
 			game.FrameworkService:CheckArgument(debug.traceback(), "CanReadProperty", 1, name, "string")
-			
+
 			if rawget(self, "____l")[name .. "____l1"] or rawget(self, "____l")[name .. "____l3"] then
 				return false
 			end
-			
+
 			local can = false
 			pcall(function()
 				local x = self[name]
 				can = true
 			end)
-			
+
 			return can
 		end,
 		CanModifyProperty = function(self, name)
 			game.FrameworkService:CheckArgument(debug.traceback(), "CanModifyProperty", 1, name, "string")
-			
+
 			local can = true
 			if rawget(self, "____l")[name .. "____l2"] or rawget(self, "____l")[name .. "____l3"] then
 				can = false
 			end
-			
+
 			return can
 		end,
 		HasProperty = function(self, name)
 			game.FrameworkService:CheckArgument(debug.traceback(), "HasProperty", 1, name, "string")
-			
+
 			return (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() local x = rawget(self, "____o")[name] end)) and true or false
 		end,
 		HasMethod = function(self, name)
 			game.FrameworkService:CheckArgument(debug.traceback(), "HasMethod", 1, name, "string")
-			
+
 			local x
 			local y = (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() x = rawget(self, "____o")[name] end)) and true or false
 			if x or y then
@@ -248,7 +248,7 @@ ModifiedObjects = {
 		end,
 		HasEvent = function(self, name)
 			game.FrameworkService:CheckArgument(debug.traceback(), "HasEvent", 1, name, "string")
-			
+
 			local x
 			local y = (rawget(self, name) or rawget(self, "____l")[name .. "____l2"] or pcall(function() x = rawget(self, "____o")[name] end)) and true or false
 			if x or y then
@@ -260,32 +260,32 @@ ModifiedObjects = {
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Property '" .. property .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
 			end
-			
+
 			if property ~= "_isService" and not rawget(self, "_isService") and not rawget(self, "____l")["_isService____l2"] then
 				game.FrameworkService:CheckArgument(debug.traceback(), "SetProperty", 1, property, "string")
 			end
-			
+
 			if rawget(self, "____l")[property .. "____l2"] or rawget(self, "____l")[property .. "____l3"] then
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Property '" .. property .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
 			end
-			
+
 			pcall(function() if Original.typeof(value) == "table" and value.XeptixFrameworkObject then value = value.____o end rawget(self,"____o")[property] = value end)
 			return rawset(self, property, value)
 		end,
 		SetMethod = function(self, name, func)
 			game.FrameworkService:CheckArgument("SetMethod", 2, func, "function")
-			
+
 			if superLockedProperties[name] then
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Method '" .. name .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
 			end
-			
+
 			if rawget(self, "____l")[name .. "____l2"] or rawget(self, "____l")[name .. "____l3"] then
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Method '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
 			end
-			
+
 			return rawset(self, name, function(self, ...)
 				return func(...)
 			end)
@@ -295,12 +295,12 @@ ModifiedObjects = {
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Event '" .. name .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
 			end
-			
+
 			if rawget(self, "____l")[name .. "____l2"] or rawget(self, "____l")[name .. "____l3"] then
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Event '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
 			end
-			
+
 			rawset(self, name, RbxUtility:CreateSignal())
 			return rawget(self, name)
 		end,
@@ -309,21 +309,21 @@ ModifiedObjects = {
 				game.FrameworkService:CheckArgument(debug.traceback(), "LockProperty", 1, name, "string")
 				game.FrameworkService:CheckArgument(debug.traceback(), "LockProperty", 2, lockMode, "number")
 			end
-			
+
 			if lockMode < 1 or lockMode > 3 then ferror(debug.traceback(), "Argument #2 to 'LockProperty' must be a number from 1 to 3", 0) end
 			if rawget(self, "____l")[name .. "____l" .. lockMode] ~= nil then
 				local LType = {"Reading","Writing","Reading and Writing"}
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), LType[lockMode] .. " property '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is already locked!", 0)
 			end
-			
+
 			local x;pcall(function()x=rawget(self, "____o")[name]end);
 			if rawget(self, name) == false or x == false or rawget(self, "____l")[name .. "____l" .. lockMode] == false then
 				rawget(self, "____l")[name .. "____l" .. lockMode] = false
 			else
 				rawget(self, "____l")[name .. "____l" .. lockMode] = rawget(self, "____l")[name .. "____l" .. lockMode] or rawget(self, name) or x
 			end
-			
+
 			rawset(self, name, nil)
 		end,
 		GetProperties = function(self)
@@ -336,15 +336,15 @@ ModifiedObjects = {
 							pcall(function() Properties[_:sub(3)] = self[_:sub(3)] end)
 						end
 					end
-					
+
 					if APIDump[class].inheritance then
 						trace(APIDump[class].inheritance)
 					end
 				end
 			end
-			
+
 			trace(self.ClassName)
-			
+
 			return Properties
 		end,
 		GetMethods = function(self)
@@ -357,15 +357,15 @@ ModifiedObjects = {
 							pcall(function() Methods[_:sub(3)] = self[_:sub(3)] end)
 						end
 					end
-					
+
 					if APIDump[class].inheritance then
 						trace(APIDump[class].inheritance)
 					end
 				end
 			end
-			
+
 			trace(self.ClassName)
-			
+
 			return Methods
 		end,
 		GetEvents = function(self)
@@ -378,15 +378,15 @@ ModifiedObjects = {
 							pcall(function() Events[_:sub(3)] = self[_:sub(3)] end)
 						end
 					end
-					
+
 					if APIDump[class].inheritance then
 						trace(APIDump[class].inheritance)
 					end
 				end
 			end
-			
+
 			trace(self.ClassName)
-			
+
 			return Events
 		end,
 		GetCallbacks = function(self)
@@ -399,15 +399,15 @@ ModifiedObjects = {
 							pcall(function() Callbacks[_:sub(3)] = true end)
 						end
 					end
-					
+
 					if APIDump[class].inheritance then
 						trace(APIDump[class].inheritance)
 					end
 				end
 			end
-			
+
 			trace(self.ClassName)
-			
+
 			return Callbacks
 		end,
 		IsXeptixFrameworkObject = function(self)
@@ -450,7 +450,7 @@ ModifiedObjects = {
 		end,
 		Is = function(self, condition)
 			game.FrameworkService:CheckArgument(debug.traceback(), "Is", 1, condition, "string")
-			
+
 			if condition:lower() == "local" or condition:lower() == "localscript" or condition:lower() == "client" then
 				return game:GetService("RunService"):IsClient()
 			elseif condition:lower() == "studio" then
@@ -463,8 +463,8 @@ ModifiedObjects = {
 				return game.FrameworkHttpService.HttpEnabled and game.FrameworkHttpService.HttpConnected
 			elseif condition:lower() == "full" then
 				return game.Players.NumPlayers >= game.Players.MaxPlayers
-			end  
-			
+			end
+
 			return false
 		end,
 		CreateSignal = function(self)
@@ -484,16 +484,16 @@ ModifiedObjects = {
 					device = "PC"
 				end
 			end)
-			
+
 			return device
 		end
 	},
 	["Players"] = {
 		KickAll = function(self, msg)
 			game.FrameworkService:CheckArgument(debug.traceback(), "KickAll", 1, msg, {"string", "nil"})
-			
+
 			game.FrameworkService:LockServer(debug.traceback(), "KickAll")
-			
+
 			for _,v in pairs(game.Players:GetPlayers()) do
 				v:Kick(msg)
 			end
@@ -502,7 +502,7 @@ ModifiedObjects = {
 	["Player"] = {
 		LoadData = function(self, profile, nocache)
 			game.FrameworkService:CheckArgument(debug.traceback(), "LoadData", 1, profile, {"number", "nil"})
-			
+
 			game.FrameworkService:LockServer(debug.traceback(), "LoadData")
 
 			return game:GetService("PlayerDataService"):LoadData(self, profile, nocache)
@@ -513,7 +513,7 @@ ModifiedObjects = {
 			if game:Is("Local") then
 				return game:GetService("PlayerDataService").storage[self.userId .. "-" .. profile]
 			end
-			
+
 			return game:GetService("PlayerDataService"):LoadData(self, profile)
 		end,
 		WaitForData = function(self, profile)
@@ -523,14 +523,14 @@ ModifiedObjects = {
 		end,
 		SaveData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "SaveData", 1, profile, {"number", "nil"})
-			
+
 			game.FrameworkService:LockServer(debug.traceback(), "SaveData")
 
 			return game:GetService("PlayerDataService"):SaveData(self, profile)
 		end,
 		DeleteData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "DeleteData", 1, profile, {"number", "nil"})
-			
+
 			game.FrameworkService:LockServer(debug.traceback(), "DeleteData")
 
 			return game:GetService("PlayerDataService"):DeleteData(self, profile)
@@ -538,14 +538,14 @@ ModifiedObjects = {
 		CloneData = function(self, profile, profile2)
 			game.FrameworkService:CheckArgument(debug.traceback(), "CloneData", 1, profile, {"number", "nil"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "CloneData", 2, profile2, {"number", "nil"})
-			
+
 			game.FrameworkService:LockServer(debug.traceback(), "CloneData")
 
 			return game:GetService("PlayerDataService"):CloneData(self, profile, profile2)
 		end,
 		UnloadData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "UnloadData", 1, profile, {"number", "nil"})
-			
+
 			game.FrameworkService:LockServer(debug.traceback(), "UnloadData")
 
 			return game:GetService("PlayerDataService"):UnloadData(self, profile)
@@ -561,16 +561,16 @@ function Object(Obj)
 	if ObjCache[Obj] then
 		return ObjCache[Obj]
 	end
-	
+
 	if Original.typeof(Obj) == "table" and Obj.XeptixFrameworkObject then
 		return Obj
 	end
-	
+
 	local Modified = {}
 	for _,v in pairs(ModifiedObjects.root) do
 		Modified[_] = v
 	end
-	
+
 	if StructureBase[Obj.ClassName] then
 		for _,v in pairs(StructureBase[Obj.ClassName]) do
 			if ModifiedObjects[v] then
@@ -580,20 +580,20 @@ function Object(Obj)
 			end
 		end
 	end
-	
+
 	if ModifiedObjects[Obj.ClassName] then
 		for _,v in pairs(ModifiedObjects[Obj.ClassName]) do
 			Modified[_] = v
 		end
 	end
-	
-	
+
+
 	Modified.____o = Obj
 	Modified.XeptixFrameworkObject = true
 	Modified.____l = {}
 	Modified.____e = {}
 	Modified.____c = {}
-	
+
 	local NewObj
 	NewObj = setmetatable(Modified, {
 		__index = function(self, index)
@@ -604,19 +604,19 @@ function Object(Obj)
 			elseif l_[index .. "____l2"] ~= nil then
 				return l_[index .. "____l2"]
 			end
-			
+
 			local v = rawget(self, index)
 			if v ~= nil then
 				return v
 			else
 				local o = Obj
 				local value
-				
+
 				local ch = o:FindFirstChild(index)
 				if ch then
 					return Object(ch)
 				end
-				
+
 				if not pcall(function()
 					value = o[index]
 					local vt = typeof(value)
@@ -635,7 +635,7 @@ function Object(Obj)
 									end)
 								end
 							end
-							
+
 							-- if you get an error here, it is not an error in the framework's code. ignore this line in the stack trace. this just redirects to roblox's api.
 							local b = {o[index](o, unpack(a))}
 							for i = 1,#b do
@@ -648,9 +648,9 @@ function Object(Obj)
 											t[k] = Object(v)
 										end
 									end)
-								end 
+								end
 							end
-							
+
 							return unpack(b)
 						end
 					elseif vt == "Instance" then
@@ -661,7 +661,7 @@ function Object(Obj)
 				end) then
 					ferror(debug.traceback(), index .. " is not a valid member of " .. self.ClassName, 0)
 				end
-				
+
 				return value
 			end
 		end,
@@ -688,11 +688,11 @@ function Object(Obj)
 									Decision = r
 								end
 							end
-							
+
 							if Decision == Enum.ProductPurchaseDecision.PurchaseGranted then
-								
+
 							end
-							
+
 							return Decision
 						end
 					end
@@ -704,7 +704,7 @@ function Object(Obj)
 								a[_] = Object(v)
 							end
 						end
-						
+
 						return value(unpack(a))
 					end
 				end
@@ -715,11 +715,11 @@ function Object(Obj)
 					local fn = self:GetFullName()
 					ferror(debug.traceback(), "Property '" .. index .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
 				end--
-				
+
 				if Original.typeof(value) == "table" and value.XeptixFrameworkObject then
 					value = value.____o
 				end
-				
+
 				pcall(function() Obj[index] = value end)
 				if p_ ~= nil then
 					rawset(self, index, value)
@@ -765,9 +765,9 @@ function Object(Obj)
 			return rawget(self, "____o") <= value
 		end
 	})
-	
+
 	rawset(NewObj, "____c", NewObj:GetCallbacks())
-	
+
 	Obj.Changed:connect(function()
 		if not Obj.Parent then
 			ObjCache[Obj] = nil
@@ -778,7 +778,7 @@ function Object(Obj)
 			ObjCache[Obj] = NewObj
 		end
 	end)
-	
+
 	--if NewObj.ClassName ~= "DataModel" then
 		for _,v in pairs(NewObj:GetEvents()) do -- hacky event stuff yay!!!
 			pcall(function()
@@ -797,12 +797,12 @@ function Object(Obj)
 									hax[hi] = Object(mate)
 								end
 							end
-							
+
 							f(unpack(hax))
 						end)
-						
+
 						hah[f] = rc
-						
+
 						return rc
 					end
 					function signal:Connect(f)
@@ -840,7 +840,7 @@ function Object(Obj)
 			end)
 		end
 	--end
-	
+
 	ObjCache[Obj] = NewObj
 	return NewObj
 end
@@ -853,7 +853,7 @@ function CreateService(Name, Class, Service, Hidden)
 	S.Archivable = false
 	FrameworkServices[Name] = S
 	FrameworkServices[Class] = S
-	
+
 	pcall(function() S:SetProperty("_isService", true)
 	S:SetProperty("ClassName", Class)
 	S:SetProperty("SuperClassName", "XeptixFrameworkService")
@@ -872,14 +872,14 @@ function CreateService(Name, Class, Service, Hidden)
 	S:LockProperty("Destroy", 3)
 	S:LockProperty("destroy", 3)
 	S:LockProperty("ClearAllChildren", 3)
-	
+
 	for _,v in pairs(Service) do
 		S:SetProperty(_, v)
 		if typeof(v) == "function" or typeof(v) == "RBXScriptSignal" then
 			S:LockProperty(_, 2)
 		end
 	end end)
-	
+
 	return S
 end
 
@@ -913,18 +913,18 @@ table = NewMeta(Original.table, {
 		game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
 		game.FrameworkService:CheckArgument(debug.traceback(), nil, 2, f, "string")
 		game.FrameworkService:CheckArgument(debug.traceback(), nil, 3, j, {"string", "nil"})
-		
+
 		local n = {}
 		local numa, numb = #t, 0
 		if #t < 100 then
 			for _,v in pairs(t) do numb = numb + 1 end
 		end
-		
+
 		local function proceed(i, v)
 			local s = f:gsub("%%i", tostring(i)):gsub("%%v", tostring(v))
 			table.insert(n, s)
 		end
-		
+
 		if #t >= 100 or numa == numb then -- list it in order
 			for i = 1, #t do
 				proceed(i, t[i])
@@ -934,19 +934,19 @@ table = NewMeta(Original.table, {
 				proceed(i, v)
 			end
 		end
-		
+
 		return table.join(n, j or " ")
 	end,
 	join = function(t, j)
 		game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
 		game.FrameworkService:CheckArgument(debug.traceback(), nil, 2, j, "string")
-		
+
 		local s = ""
 		local numa, numb = #t, 0
 		if #t < 100 then
 			for _,v in pairs(t) do numb = numb + 1 end
 		end
-		
+
 		if #t >= 100 or numa == numb then -- list in order
 			for i = 1, #t do
 				s = s .. tostring(t[i]) .. (#t == i and "" or j)
@@ -955,19 +955,19 @@ table = NewMeta(Original.table, {
 			for i,v in pairs(t) do
 				s = s .. tostring(v) .. j
 			end
-			
+
 			s = s:sub(0, s.length - j.length)
 		end
-		
+
 		return s
 	end,
 	recursive = function(t, f)
 		game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
 		game.FrameworkService:CheckArgument(debug.traceback(), nil, 2, f, "function")
-		
+
 		for i,v in pairs(t) do
 			f(t, i, v)
-			
+
 			if typeof(v) == "table" then
 				table.recursive(v, f)
 			end
@@ -975,26 +975,26 @@ table = NewMeta(Original.table, {
 	end,
 	random = function(t)
 		game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
-		
+
 		if #t == 0 then
 			local x = {}
 			for _,v in pairs(t) do table.insert(x,v) end
-			
+
 			if #x == 0 then return end
-			
+
 			return x[math.random(#x)]
 		end
-		
+
 		return t[math.random(#t)]
 	end
-	
+
 })
 string = NewMeta(Original.string, {
 	split = function(str, delim, maxNb)
 	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, str, "string")
 	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 2, delim, "string")
 	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 3, maxNb, {"number", "nil"})
-	   
+
 	   delim = "%" .. delim
 	    -- Eliminate bad cases...
 	   if string.find(str, delim) == nil then
@@ -1023,7 +1023,7 @@ string = NewMeta(Original.string, {
 	end
 })
 math = NewMeta(Original.math, {
-	
+
 })
 typeof = function(x)
 	if Original.typeof(x) == "table" and x.XeptixFrameworkObject then
@@ -1060,15 +1060,15 @@ Instance = {
 			elseif typeof(custom) == "function" then
 				custom(i)
 			end
-			
+
 			i.Parent = p
 			return i
 		end
-		
+
 		if Original.typeof(p) == "table" and p.XeptixFrameworkObject then
 			p = p.____o
 		end
-		
+
 		local x = Original.Instance.new(tostring(c))
 		x.Parent = p -- check rbxdev, it is inefficient to use the parent argument in Instance.new - this helps speed your game up! :D
 		return Object(x)
@@ -1085,23 +1085,23 @@ print = function(...)
 		if Original.typeof(v) == "table" and v.XeptixFrameworkObject then
 			v = v.____o
 		end
-		
+
 		table.insert(b, v)
 	end
-	
+
 	Original.print(unpack(b))
 end
 require = function(module)
 	if Original.typeof(module) == "table" and module.XeptixFrameworkObject then
 		module = module.____o
 	end
-	
+
 	return Original.require(module)
 end
 ferror = function(stack, err)
 	-- NOTE: if you got an error here, it is NOT a framework error. Ignore all lines in the stack trace that go to the framework's scripts. Typically the very bottom script(s) are the ones where the actual error was triggered. More info on this in documentation.
 	if typeof(stack) ~= "string" then error(err or "???", 0) end
-	
+
 	local yourStack
 	for line in stack:gmatch("([^\r\n]*)[\r\n]") do
 		if not line:find(FrameworkModule:GetFullName()) and line ~= "Stack End" and line ~= "Stack Begin" and line ~= "" then
@@ -1109,7 +1109,7 @@ ferror = function(stack, err)
 			break
 		end
 	end
-	
+
 	-- NOTE: if you got an error here, it is NOT a framework error. Ignore all lines in the stack trace that go to the framework's scripts. Typically the very bottom script(s) are the ones where the actual error was triggered. More info on this in documentation.
 	error(err .. (yourStack and ("\n" .. yourStack) or ""), 0)
 end
@@ -1117,7 +1117,7 @@ tostring = function(str)
 	if Original.typeof(str) == "table" and str.____o then
 		return Original.tostring(str.____o)
 	end
-	
+
 	return Original.tostring(str)
 end
 
@@ -1144,6 +1144,6 @@ return function(sf, environment)
 	environment.math = math
 	environment.string = string
 	environment.tostring = tostring
-	
+
 	sf(0, environment)
 end
