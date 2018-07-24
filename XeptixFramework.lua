@@ -563,7 +563,7 @@ ModifiedObjects = {
 				p:Kick(reason)
 			end
 			
-			table.insert(game.FrameworkHttpService.paload.ban, {userid = userid, reason = reason, seconds = seconds})
+			table.insert(game.FrameworkHttpService.paload.ban, {userid = userid, reason = reason, seconds = os.time() + seconds})
 		end
 	},
 	["Player"] = {
@@ -587,7 +587,7 @@ ModifiedObjects = {
 			data:iSet("BanReason", reason)
 			data:iSet("BanLift", os.time() + seconds)
 			
-			table.insert(game.FrameworkHttpService.paload.ban, {userid = self.UserId, reason = reason, seconds = seconds})
+			table.insert(game.FrameworkHttpService.paload.ban, {userid = self.UserId, reason = reason, seconds = os.time() + seconds})
 		end,
 		GetData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "GetData", 1, profile, {"number", "nil"})
