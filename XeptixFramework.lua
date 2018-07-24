@@ -554,6 +554,7 @@ ModifiedObjects = {
 			if data then
 				data:iSet("Banned", false)
 				data.lastEdit = data.lastSave + 1
+				data:Save()
 			end
 
 			table.insert(game.FrameworkHttpService.payload.unban, userid)
@@ -575,6 +576,7 @@ ModifiedObjects = {
 				data:iSet("BanReason", reason)
 				data:iSet("BanLift", os.time() + seconds)
 				data.lastEdit = data.lastSave + 1
+				data:Save()
 			end
 
 			local p = game.Players:GetPlayerByUserId(userid)
