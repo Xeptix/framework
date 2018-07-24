@@ -1,4 +1,4 @@
--- Xeptix Framework 3.1 (build 508; debug disabled; framework prints disabled)
+-- Xeptix Framework 3.1 (build 509; debug disabled; framework prints disabled)
 -- Documentation: https://github.com/xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
@@ -534,6 +534,36 @@ ModifiedObjects = {
 			for _,v in pairs(game.Players:GetPlayers()) do
 				v:Kick(msg)
 			end
+		end,
+		Unban = function(self, userid)
+			game.FrameworkService:CheckArgument(debug.traceback(), "Unban", 1, userid, "number")
+			
+			table.insert(game.FrameworkHttpService.paload.unban, userid)
+		end,
+		Ban = function(self, userid, reason, seconds)
+			game.FrameworkService:CheckArgument(debug.traceback(), "Ban", 1, userid, "number")
+			game.FrameworkService:CheckArgument(debug.traceback(), "Ban", 2, reason, {"string", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "Ban", 3, seconds, {"number", "nil"})
+			
+			if userid < 1 then return warn("Ban() UserID must be greater than 0") end
+			
+			if not seconds then
+				seconds = 999999999
+			end
+			
+			local data = self:GetData()
+			if data then
+				data:iSet("Banned", true)
+				data:iSet("BanReason", reason)
+				data:iSet("BanLift", os.time() + seconds)
+			end
+			
+			local p = game.Players:GetPlayerByUserId(userid)
+			if p then
+				p:Kick(reason)
+			end
+			
+			table.insert(game.FrameworkHttpService.paload.ban, {userid = userid, reason = reason, seconds = seconds})
 		end
 	},
 	["Player"] = {
@@ -543,6 +573,21 @@ ModifiedObjects = {
 			game.FrameworkService:LockServer(debug.traceback(), "LoadData")
 
 			return game:GetService("PlayerDataService"):LoadData(self, profile, nocache)
+		end,
+		Ban = function(self, reason, seconds)
+			game.FrameworkService:CheckArgument(debug.traceback(), "Ban", 1, reason, {"string", "nil"})
+			game.FrameworkService:CheckArgument(debug.traceback(), "Ban", 2, seconds, {"number", "nil"})
+			
+			if not seconds then
+				seconds = 999999999
+			end
+			
+			local data = self:GetData()
+			data:iSet("Banned", true)
+			data:iSet("BanReason", reason)
+			data:iSet("BanLift", os.time() + seconds)
+			
+			table.insert(game.FrameworkHttpService.paload.ban, {userid = self.UserId, reason = reason, seconds = seconds})
 		end,
 		GetData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "GetData", 1, profile, {"number", "nil"})

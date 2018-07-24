@@ -327,6 +327,56 @@ return {"PlayerDataService", "PlayerDataService", {
 
 
 		local _self = {}
+
+		local function banCheck(data)
+			if data.internal['Banned'] and data.internal["BanLift"] and data.internal["BanLift"] > os.time() then
+				delay(1, function()
+					local diff = data.internal["BanLift"] - os.time()
+
+					local weeks = math.floor(diff / 60 / 60 / 24 / 7)
+					if weeks >= 1 then
+						diff = diff - (weeks * 60 / 60 / 24 / 7)
+					end
+					local days = math.floor(diff / 60 / 60 / 24)
+					if days >= 1 then
+						diff = diff - (days * 60 / 60 / 24)
+					end
+					local hours = math.floor(diff / 60 / 60)
+					if hours >= 1 then
+						diff = diff - (hours * 60 / 60)
+					end
+					local minutes = math.floor(diff / 60)
+					if minutes >= 1 then
+						diff = diff - (minutes * 60)
+					end
+					local seconds = math.floor(diff)
+
+					local t = ""
+					if weeks >= 1 then
+						t = t .. weeks .. " Weeks "
+					end
+					if days >= 1 then
+						t = t .. days .. " Days "
+					end
+					if hours >= 1 then
+						t = t .. hours .. " Hours "
+					end
+					if minutes >= 1 then
+						t = t .. minutes .. " Minutes "
+					end
+
+					if seconds >= 1 then
+						t = t .. seconds .. " Seconds "
+					end
+
+					_self.player:Kick("You are currently banned from the game!\n\nReason: " .. (data.internal["BanReason"] or "N/A")  .. "\nTime left: " .. t)
+				end)
+			end
+		end
+
+		banCheck(data)
+
+
 		if id >= 1 then
 			pcall(function()
 				_self.DBCon = Databases[profile]:OnUpdate("PlayerList$" .. id, function(UpdatedData)
@@ -357,55 +407,9 @@ return {"PlayerDataService", "PlayerDataService", {
 							end
 						end
 					end
+
+					banCheck(UpdatedData)
 				end)
-			end)
-		end
-		
-		data.player['[Banned From Game]'] = nil
-		data.player['[Ban Reason]'] = nil
-		data.player['[Ban Lift Timestamp]'] = nil
-		
-		if data.internal['Banned'] and data.internal["BanLift"] and data.internal["BanLift"] > os.time() then
-			delay(1, function()
-				local diff = data.internal["BanLift"] - os.time()
-				
-				local weeks = math.floor(diff / 60 / 60 / 24 / 7)
-				if weeks >= 1 then
-					diff = diff - (weeks * 60 / 60 / 24 / 7)
-				end
-				local days = math.floor(diff / 60 / 60 / 24)
-				if days >= 1 then
-					diff = diff - (days * 60 / 60 / 24)
-				end
-				local hours = math.floor(diff / 60 / 60)
-				if hours >= 1 then
-					diff = diff - (hours * 60 / 60)
-				end
-				local minutes = math.floor(diff / 60)
-				if minutes >= 1 then
-					diff = diff - (minutes * 60)
-				end
-				local seconds = math.floor(diff)
-				
-				local t = ""
-				if weeks >= 1 then
-					t = t .. weeks .. " Weeks "
-				end
-				if days >= 1 then
-					t = t .. days .. " Days "
-				end
-				if hours >= 1 then
-					t = t .. hours .. " Hours "
-				end
-				if minutes >= 1 then
-					t = t .. minutes .. " Minutes "
-				end
-				
-				if seconds >= 1 then
-					t = t .. seconds .. " Seconds "
-				end
-				
-				_self.player:Kick("You are currently banned from the game!\n\nReason: " .. (data.internal["BanReason"] or "N/A")  .. "\nTime left: " .. t)
 			end)
 		end
 
