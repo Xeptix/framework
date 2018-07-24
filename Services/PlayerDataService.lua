@@ -33,6 +33,8 @@ return {"PlayerDataService", "PlayerDataService", {
 					if v and v.lastTouch then
 						if v.lastTouch + game.FrameworkHttpService.UnloadDelay <= os.time() then -- hasn't been touched in 2.5 minutes, unload it if they aren't in-game
 							if not game.Players:GetPlayerByUserId(v.userid) then
+								v:Save()
+								
 								game.PlayerDataService:UnloadData(v.userid, v.profile)
 							end
 						end

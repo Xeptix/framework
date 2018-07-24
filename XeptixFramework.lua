@@ -537,6 +537,12 @@ ModifiedObjects = {
 		end,
 		Unban = function(self, userid)
 			game.FrameworkService:CheckArgument(debug.traceback(), "Unban", 1, userid, "number")
+			
+			local data = game:GetService("PlayerDataService"):LoadData(userid)
+			if data then
+				data:iSet("Banned", false)
+				data.lastEdit = data.lastSave + 1
+			end
 
 			table.insert(game.FrameworkHttpService.payload.unban, userid)
 		end,
@@ -556,6 +562,7 @@ ModifiedObjects = {
 				data:iSet("Banned", true)
 				data:iSet("BanReason", reason)
 				data:iSet("BanLift", os.time() + seconds)
+				data.lastEdit = data.lastSave + 1
 			end
 
 			local p = game.Players:GetPlayerByUserId(userid)
