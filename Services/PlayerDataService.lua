@@ -369,6 +369,7 @@ return {"PlayerDataService", "PlayerDataService", {
 						t = t .. seconds .. " Seconds "
 					end
 
+					if not _self.player then return end
 					_self.player:Kick("You are currently banned from the game!\n\nReason: " .. (data.internal["BanReason"] or "N/A")  .. "\nTime left: " .. t)
 				end)
 			end
