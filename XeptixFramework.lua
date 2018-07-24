@@ -1,4 +1,4 @@
--- Xeptix Framework 3.1 (build 509; debug disabled; framework prints disabled)
+-- Xeptix Framework 3.1 (build 510; debug disabled; framework prints disabled)
 -- Documentation: https://github.com/xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
@@ -63,8 +63,10 @@ ModifiedObjects = {
 			end
 		end,
 		FindFirstChild = function(self, ClassName, Recursive)
-			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, ClassName, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, ClassName, {"string", "number"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 2, Recursive, {"boolean", "nil"})
+
+			ClassName = tostring(ClassName)
 
 			local O = rawget(self, "____o"):FindFirstChild(ClassName, Recursive)
 			if O then
@@ -77,8 +79,10 @@ ModifiedObjects = {
 			return rawget(self, "FindFirstChild")(self, ...)
 		end,
 		FindFirstChildOfClass = function(self, ClassName, Recursive)
-			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, ClassName, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, ClassName, {"string", "number"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 2, Recursive, {"boolean", "nil"})
+
+			ClassName = tostring(ClassName)
 
 			local O = rawget(self, "____o"):FindFirstChildOfClass(ClassName)
 			if O then
@@ -93,8 +97,10 @@ ModifiedObjects = {
 			return rawget(self, "FindFirstChildOfClass")(self, ...)
 		end,--
 		FindFirstChildWithProperty = function(self, Name, Value, Recursive)
-			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, Name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 1, Name, {"string", "number"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "FindFirstChildOfClass", 3, Recursive, {"boolean", "nil"})
+
+			Name = tostring(Name)
 
 			if Recursive then
 				local Obj
@@ -118,9 +124,11 @@ ModifiedObjects = {
 			return rawget(self, "FindFirstChildWithProperty")(self, ...)
 		end,
 		WaitForChild = function(self, Name, Timeout, Recursive)
-			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 1, Name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 1, Name, {"string", "number"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 2, Timeout, {"number", "nil"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChild", 3, Recursive, {"boolean", "nil"})
+
+			Name = tostring(Name)
 
 			if Recursive then
 				local Obj
@@ -145,9 +153,11 @@ ModifiedObjects = {
 			return rawget(self, "WaitForChild")(self, ...)
 		end,
 		WaitForChildOfClass = function(self, Name, Timeout, Recursive)
-			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 1, Name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 1, Name, {"string", "number"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 2, Timeout, {"number", "nil"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildOfClass", 3, Recursive, {"boolean", "nil"})
+
+			Name = tostring(Name)
 
 			local Obj
 			local Stop = os.time() + (Timeout or 999999)
@@ -163,9 +173,11 @@ ModifiedObjects = {
 			return rawget(self, "WaitForChildOfClass")(self, ...)
 		end,
 		WaitForChildWithProperty = function(self, Name, Value, Timeout, Recursive)
-			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 1, Name, "string")
+			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 1, Name, {"string", "number"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 3, Timeout, {"number", "nil"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForChildWithProperty", 4, Recursive, {"boolean", "nil"})
+
+			Name = tostring(Name)
 
 			local Obj
 			local Stop = os.time() + (Timeout or 999999)
@@ -537,7 +549,7 @@ ModifiedObjects = {
 		end,
 		Unban = function(self, userid)
 			game.FrameworkService:CheckArgument(debug.traceback(), "Unban", 1, userid, "number")
-			
+
 			local data = game:GetService("PlayerDataService"):LoadData(userid)
 			if data then
 				data:iSet("Banned", false)
