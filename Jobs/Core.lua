@@ -105,7 +105,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 		end)
 		
 		
-		print("Bro...")
+		--print("Bro...")
 		local PlsWork = Instance.new("Folder", workspace)
 		PlsWork.Name = "PlsWork"
 		local v1 = Instance.new("StringValue", workspace)
