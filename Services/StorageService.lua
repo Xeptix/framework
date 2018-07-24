@@ -12,6 +12,7 @@ return {"StorageService", "StorageService", {--
 		if game:Is("Server") then
 			pcall(function()
 				StorageDB = game:GetService("DataStoreService"):GetDataStore("XeptixFramework_Storage")
+				
 			end)
 
 			self:SetEvent("OnUpdate")
@@ -174,9 +175,9 @@ return {"StorageService", "StorageService", {--
 							local DaNew
 							StorageDB:UpdateAsync(v, function(Old)
 								local RawOld = Old or {}
-								local New = f(game.FrameworkService:LightUnserialize(RawOld[1]))
+								local New = f(game.FrameworkService:LightUnserialize(RawOld[2]))
 								
-								DaNew = game.FrameworkService:LightSerialize(New, true)
+								DaNew = New
 
 								return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 							end)
@@ -201,9 +202,9 @@ return {"StorageService", "StorageService", {--
 							local DaNew
 							StorageDB:UpdateAsync(v, function(Old)
 								local RawOld = Old or {}
-								local New = f(game.FrameworkService:LightUnserialize(RawOld[1]))
+								local New = f(game.FrameworkService:LightUnserialize(RawOld[2]))
 								
-								DaNew = game.FrameworkService:LightSerialize(New, true)
+								DaNew = New
 
 								return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 							end)
@@ -229,9 +230,9 @@ return {"StorageService", "StorageService", {--
 						local DaNew
 						StorageDB:UpdateAsync(Keys, function(Old)
 							local RawOld = Old or {}
-							local New = f(game.FrameworkService:LightUnserialize(RawOld[1]))
+							local New = f(game.FrameworkService:LightUnserialize(RawOld[2]))
 								
-							DaNew = game.FrameworkService:LightSerialize(New, true)
+							DaNew = New
 
 							return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 						end)
@@ -254,13 +255,13 @@ return {"StorageService", "StorageService", {--
 						local DaNew
 						StorageDB:UpdateAsync(Keys, function(Old)
 							local RawOld = Old or {}
-							local New = f(game.FrameworkService:LightUnserialize(RawOld[1]))
+							local New = f(game.FrameworkService:LightUnserialize(RawOld[2]))
 								
-							DaNew = game.FrameworkService:LightSerialize(New, true)
+							DaNew = New
 
 							return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 						end)
-							
+						
 						if DaNew then
 							self:Set(Keys, DaNew, true)
 						end

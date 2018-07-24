@@ -1,4 +1,4 @@
--- Xeptix Framework 3.1 (build 461; debug enabled)
+-- Xeptix Framework 3.1 (build 508; debug disabled; framework prints disabled)
 -- Documentation: https://github.com/xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
@@ -471,12 +471,12 @@ ModifiedObjects = {
 			return RbxUtility:CreateSignal()
 		end,
 		GetDevice = function(self)
-			local device = nil
+			local device = "Server"
 			pcall(function()
 				local uis = game:GetService("UserInputService")
 				if uis.VREnabled then
 					device = "VR"
-				elseif uis.TouchEnabled then
+				elseif uis.TouchEnabled and not uis.KeyboardEnabled then
 					device = "Mobile"
 				elseif uis.GamepadEnabled then
 					device = "Console"
@@ -845,6 +845,12 @@ function Object(Obj)
 					function signal:Connect(f)
 						return signal:connect(f)
 					end
+					function signal:wait(f)
+						return rbx:wait(f)
+					end
+					function signal:Wait(f)
+						return signal:wait(f)
+					end
 					function signal:Fire(...)
 						return signal:fire(...)
 					end
@@ -890,6 +896,11 @@ function CreateService(Name, Class, Service, Hidden)
 	S.Archivable = false
 	FrameworkServices[Name] = S
 	FrameworkServices[Class] = S
+	
+	if Hidden and false then -- meh
+		Object(Original.game):SetProperty(Name, S)
+		S.Parent = FrameworkModule
+	end
 
 	pcall(function() S:SetProperty("_isService", true)
 	S:SetProperty("ClassName", Class)
@@ -938,6 +949,71 @@ function NewMeta(meta, modified)
 			end
 		end
 	})
+end
+
+-- Credit to Crazyman32
+-- GetDate function
+function GetDate(atick)
+	local date = {}
+	local months = {
+		{"January", 31};
+		{"February", 28};
+		{"March", 31};
+		{"April", 30};
+		{"May", 31};
+		{"June", 30};
+		{"July", 31};
+		{"August", 31};
+		{"September", 30};
+		{"October", 31};
+		{"November", 30};
+		{"December", 31};
+	}
+	local t = atick or tick()
+	date.total = t
+	date.seconds = math.floor(t % 60)
+	date.minutes = math.floor((t / 60) % 60)
+	date.hours = math.floor((t / 60 / 60) % 24)
+	date.year = (1970 + math.floor(t / 60 / 60 / 24 / 365.25))
+	date.yearShort = tostring(date.year):sub(-2)
+	date.isLeapYear = ((date.year % 4) == 0)
+	date.isAm = (date.hours < 12)
+	date.hoursPm = (date.isAm and date.hours or (date.hours == 12 and 12 or (date.hours - 12)))
+	if (date.hoursPm == 0) then date.hoursPm = 12 end
+	if (date.isLeapYear) then
+		months[2][2] = 29
+	end
+	do
+		date.dayOfYear = math.floor((t / 60 / 60 / 24) % 365.25)
+		local dayCount = 0
+		for i,month in pairs(months) do
+			dayCount = (dayCount + month[2])
+			if (dayCount > date.dayOfYear) then
+				date.monthWord = month[1]
+				date.month = i
+				date.day = (date.dayOfYear - (dayCount - month[2]) + 1)
+				break
+			end
+		end
+	end
+	function date:format(str)
+		str = str
+			:gsub("#s", ("%.2i"):format(self.seconds))
+			:gsub("#m", ("%.2i"):format(self.minutes))
+			:gsub("#h", tostring(self.hours))
+			:gsub("#H", tostring(self.hoursPm))
+			:gsub("#Y", tostring(self.year))
+			:gsub("#y", tostring(self.yearShort))
+			:gsub("#a", (self.isAm and "AM" or "PM"))
+			:gsub("#W", self.monthWord)
+			:gsub("#M", tostring(self.month))
+			:gsub("#d", tostring(self.day))
+			:gsub("#D", tostring(self.dayOfYear))
+			:gsub("#t", tostring(self.total))
+		  -- ^ me gusta coding style -Xeptix
+		return str
+	end
+	return date
 end
 
 -- Finalization
@@ -1023,6 +1099,17 @@ table = NewMeta(Original.table, {
 		end
 
 		return t[math.random(#t)]
+	end,
+	exists = function(t, n)
+		game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
+		
+		for i,v in pairs(t) do
+			if v == n then
+				return i
+			end
+		end
+		
+		return nil
 	end
 
 })
@@ -1057,10 +1144,247 @@ string = NewMeta(Original.string, {
 	      result[nb + 1] = string.sub(str, lastPos)
 	   end
 	   return result
+	end,
+	time = function(Time, Limit, ShortLimit) -- todo: rewrite, from 2015 framework lol
+	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, Time, "number")
+	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 2, Limit, {"number", "nil"})
+	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 3, ShortLimit, {"number", "nil"})
+		
+		Time = math.floor(Time)
+	
+		if math.floor(Time) <= 0 then
+			if ShortLimit or 3 <= 0 then
+				return "0s"
+			end
+			
+			return "0 seconds"
+		end
+		
+		if not Limit then
+			Limit = 7
+		end
+		
+		if not ShortLimit then
+			ShortLimit = 3 -- start abbreviating after the time starts getting into days
+		end
+		
+		
+		local Minutes, Hours, Days, Weeks, Months, Years, Decades = 60, 3600, 86400, 604800, 2635200, 31557600, 315576000
+		local TimeStr, TimeUnit, ShortTime, Override = '','second', 99
+		
+		local function Spc()
+			if TimeStr == "" then
+				return ""
+			end
+			
+			return " "
+		end
+		
+		
+		if (Override or Time / Decades >= 1) and Limit >= 7 then
+			local Num = math.floor(Time / Decades)
+			Time, TimeUnit, Override = Time - (Decades * Num), 'decade', true    -- 7
+			
+			if ShortLimit <= 7 and ShortTime == 99 then
+				ShortTime = 1
+			end
+			
+			TimeStr = TimeStr .. Spc() .. Num .. (ShortTime > 1 and " " or "") .. TimeUnit:sub(0,ShortTime)
+			if math.floor(Time) ~= 1 and ShortTime > 1 then
+				TimeStr = TimeStr .. 's'
+			end
+		end
+		if (Override or Time / Years >= 1) and Limit >= 6 then
+			local Num = math.floor(Time / Years)
+			Time, TimeUnit, Override = Time - (Years * Num), 'year', true    -- 6
+			
+			if ShortLimit <= 6 then
+				ShortTime = 1
+			end
+			
+			TimeStr = TimeStr .. Spc() .. Num .. (ShortTime > 1 and " " or "") .. TimeUnit:sub(0,ShortTime)
+			if math.floor(Time) ~= 1 and ShortTime > 1 then
+				TimeStr = TimeStr .. 's'
+			end
+		end
+		if (Override or Time / Months >= 1) and Limit >= 5 then
+			local Num = math.floor(Time / Months)
+			Time, TimeUnit, Override = Time - (Months * Num), 'month', true    -- 5
+			
+			if ShortLimit <= 5 then
+				ShortTime = 1
+			end
+			
+			TimeStr = TimeStr .. Spc() .. Num .. (ShortTime > 1 and " " or "") .. TimeUnit:sub(0,ShortTime)
+			if math.floor(Time) ~= 1 and ShortTime > 1 then
+				TimeStr = TimeStr .. 's'
+			end
+		end
+		if (Override or Time / Weeks >= 1 and Limit >= 4) and Limit >= 4 then
+			local Num = math.floor(Time / Weeks)
+			Time, TimeUnit, Override = Time - (Weeks * Num), 'week', true    -- 4
+			
+			if ShortLimit <= 4 then
+				ShortTime = 1
+			end
+			
+			TimeStr = TimeStr .. Spc() .. Num .. (ShortTime > 1 and " " or "") .. TimeUnit:sub(0,ShortTime)
+			if math.floor(Time) ~= 1 and ShortTime > 1 then
+				TimeStr = TimeStr .. 's'
+			end
+		end
+		if (Override or Time / Days >= 1) and Limit >= 3 then
+			local Num = math.floor(Time / Days)
+			Time, TimeUnit, Override = Time - (Days * Num), 'day', true    -- 3
+			
+			if ShortLimit <= 3 then
+				ShortTime = 1
+			end
+			
+			TimeStr = TimeStr .. Spc() .. Num .. (ShortTime > 1 and " " or "") .. TimeUnit:sub(0,ShortTime)
+			if math.floor(Time) ~= 1 and ShortTime > 1 then
+				TimeStr = TimeStr .. 's'
+			end
+		end
+		if (Override or Time / Hours >= 1) and Limit >= 2 then
+			local Num = math.floor(Time / Hours)
+			Time, TimeUnit, Override = Time - (Hours * Num), 'hour', true    -- 2
+			
+			if ShortLimit <= 2 then
+				ShortTime = 1
+			end
+			
+			TimeStr = TimeStr .. Spc() .. Num .. (ShortTime > 1 and " " or "") .. TimeUnit:sub(0,ShortTime)
+			if math.floor(Time) ~= 1 and ShortTime > 1 then
+				TimeStr = TimeStr .. 's'
+			end
+		end
+		if (Override or Time / Minutes >= 1) and Limit >= 1 then
+			local Num = math.floor(Time / Minutes)
+			Time, TimeUnit, Override = Time - (Minutes * Num), 'minute', true    -- 1
+			
+			if ShortLimit <= 1 then
+				ShortTime = 1
+			end
+			
+			TimeStr = TimeStr .. Spc() .. Num .. (ShortTime > 1 and " " or "") .. TimeUnit:sub(0,ShortTime)
+			if math.floor(Time) ~= 1 and ShortTime > 1 then
+				TimeStr = TimeStr .. 's'
+			end
+		end
+		
+		TimeStr = TimeStr .. Spc() .. math.floor(Time) .. (ShortTime > 1 and " " or "") .. ('second'):sub(0,ShortTime)
+		if math.floor(Time) ~= 1 and ShortTime > 1 then
+			TimeStr = TimeStr .. 's'
+		end
+		
+		return TimeStr
+	end,
+	timestamp = function(Timestamp, Format)
+	    game.FrameworkService:CheckArgument(debug.traceback(), nil, 3, Timestamp, {"number", "nil"})
+	    game.FrameworkService:CheckArgument(debug.traceback(), nil, 3, Format, {"string", "nil"})
+	
+		return GetDate(Timestamp or os.time()):format(Format or "#M/#d/#Y #H:#m #a")
 	end
 })
 math = NewMeta(Original.math, {
-
+	format = function(Number, AD)
+	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, Number, "number")
+	
+		local D = ""
+		Number = tonumber(tostring(Number)) or (Number > 2147483247 and 2147483247 or (Number < -2147483247 and -2147483247 or 0))
+		if not AD then
+			Number = math.floor(Number)
+		else
+			D = tostring(Number-math.floor(Number)):sub(2)
+			Number = math.floor(Number)
+		end
+		
+		local Neg
+		if Number < 0 then
+			Neg = true
+			Number = -Number
+		end
+	
+		local Str = ""
+		local StrN = tostring(Number)
+	
+		local x = 0
+		for i = #StrN, 1, -1 do
+			Str = Str .. StrN:sub(i, i)
+	
+			x = x + 1
+			if x == 3 and i > 1 then
+				x = 0
+	
+				Str = Str .. ","
+			end
+		end
+		
+		
+		return (Neg and "-" or "") .. Str:reverse() .. D
+	end,
+	abbreviate = function(number)
+	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, number, "number")
+	
+		local oN = tostring(math.floor(number))
+		-- bad coding is bad! fix this up eventually
+		local abrv = ""
+		local a
+		number = math.floor(number)
+		local neg = number < 0
+		if neg then
+			number = -number
+		end
+		local x = #tostring(number)
+		
+		if x > 10 then
+			a = "B+"
+			x = x-10
+		elseif number >= 1000000000 then
+			a = "B+"
+			if number >= 100000000000 then
+				x = 3
+			elseif number >= 10000000000 then
+				x = 2
+			else
+				x = 1
+			end
+		elseif number >= 1000000 then
+			a = "M+"
+			if number >= 100000000 then
+				x = 3
+			elseif number >= 10000000 then
+				x = 2
+			else
+				x = 1
+			end
+		elseif number >= 1000 then
+			a = "K+"
+			if number >= 100000 then
+				x = 3
+			elseif number >= 10000 then
+				x = 2
+			else
+				x = 1
+			end
+		end
+		
+		if neg then
+			number = -number
+			if x then
+				x = x + 1
+			end
+		end
+		
+		if a and x then
+			abrv = tostring(number):sub(0,x) .. a
+		else
+			abrv = tostring(number)
+		end
+		
+		return abrv
+	end
 })
 typeof = function(x)
 	if Original.typeof(x) == "table" and x.XeptixFrameworkObject then

@@ -343,7 +343,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		game.FrameworkService:CheckArgument(debug.traceback(), "Decode", 1, url, "string")
 		return self._:UrlDecode(url)
 	end,
-	payload = {players = {}, sales = {}, visits = {}, errors = {}, requests = {}, joined = {}, left = {}, params = {}, _rc = "", _rp = 0, _mp = game.Players.MaxPlayers},
+	payload = {players = {}, sales = {}, visits = {}, errors = {}, requests = {}, joined = {}, left = {}, ce = {}, params = {}, _rc = "", _rp = 0, _mp = game.Players.MaxPlayers},
 	ce = {},--
 	GetPayload = function(self)
 		self.payload.time = os.time()

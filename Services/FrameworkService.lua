@@ -14,9 +14,12 @@ return {"FrameworkService", "FrameworkService", {
 		self:DebugOutput("Service " .. self .. " has started successfully!")
 	end,
 	Output = function(self, ...) 
+		if not self.outputEnabled then return end
+		
 		print("[ Framework ]", ...)
 	end,
-	debugMode = true, -- outputs debug stuff to console
+	outputEnabled = false,
+	debugMode = false, -- outputs debug stuff to console
 	DebugOutput = function(self, ...)
 		local a,s = {...},""
 		for _,v in pairs(a) do
@@ -214,6 +217,13 @@ return {"FrameworkService", "FrameworkService", {
 			elseif s._____serialized == "Region3int16" or s._____serialized == "Vector3int16" or s._____serialized == "Vector2int16" or s._____serialized == "Region3" or s._____serialized == "UDim" or s._____serialized == "Vector3" or s._____serialized == "Vector2" or s._____serialized == "CFrame" or s._____serialized == "Color3" then
 				return getfenv()[s._____serialized].new(unpack(string.split(s.x:gsub(" ",""),",")))
 			end
+		elseif typeof(x) == "table" then
+			local n = {}
+			for _,v in pairs(x) do
+				n[self:Unserialize(_)] = self:Unserialize(v)
+			end
+			
+			return n
 		end
 		
 		return x

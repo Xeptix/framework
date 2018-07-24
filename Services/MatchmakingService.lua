@@ -126,8 +126,8 @@ return {"MatchmakingService", "MatchmakingService", {
 		end
 	end,
 	LocalJoin = function(self, PlaceID, JobID, ReserveCode, Player, Gui)
-		if Gui == "nil" then Gui = nil elseif typeof(Gui) == "string" and game.StarterGui:FindFirstChild(tostring(Gui)) then Gui = game.StarterGui:findFirstChild(tostring(Gui)) elseif typeof(Gui) == "string" then Gui = nil end
-		
+		if Gui == "nil" then Gui = nil elseif typeof(Gui) == "string" and game.StarterGui:FindFirstChild(tostring(Gui)) then Gui = game.StarterGui[tostring(Gui)]:Clone() Gui.Enabled = true elseif typeof(Gui) == "string" then Gui = nil end
+						
 		local s, e = pcall(function()
 			if JobID == game.JobId then return true end
 			
@@ -297,16 +297,18 @@ return {"MatchmakingService", "MatchmakingService", {
 				end
 				data[i].Params = x
 				
-				data[i].Teleport = function(self, Player)
+				data[i].Teleport = function(self, Player, Gui)
 					local pid, jid, rc = self.PlaceID, self.JobID, self.ReserveCode
 					local s, e = pcall(function()
 						if jid == game.JobId then return true end
 						
+						if Gui == "nil" then Gui = nil elseif typeof(Gui) == "string" and game.StarterGui:FindFirstChild(tostring(Gui)) then Gui = game.StarterGui[tostring(Gui)]:Clone() Gui.Enabled = true elseif typeof(Gui) == "string" then Gui = nil end
+						
 						if rc then
-							return TeleportService:TeleportToPrivateServer(pid, rc, {Player}, "", {___RsrvCode = rc}, nil) -- nil = gui
+							return TeleportService:TeleportToPrivateServer(pid, rc, {Player}, "", {___RsrvCode = rc}, Gui) -- nil = gui
 						end
 						
-						TeleportService:TeleportToPlaceInstance(pid, jid, Player)
+						TeleportService:TeleportToPlaceInstance(pid, jid, Player, "", {}, Gui)
 					end)
 					
 					if s then
@@ -316,8 +318,8 @@ return {"MatchmakingService", "MatchmakingService", {
 					end
 				end
 				
-				data[i].Join = function(self, Player)
-					return self:Teleport(Player)
+				data[i].Join = function(self, Player, x)
+					return self:Teleport(Player, x)
 				end
 			end
 		end
@@ -361,7 +363,7 @@ return {"MatchmakingService", "MatchmakingService", {
 		end
 	end,
 	CreatePublicReserveServer = function(self, Players, PlaceID, TeleportData, Gui)
-		if Gui == "nil" then Gui = nil elseif typeof(Gui) == "string" and game.StarterGui:FindFirstChild(tostring(Gui)) then Gui = game.StarterGui[tostring(Gui)] elseif typeof(Gui) == "string" then Gui = nil end
+		if Gui == "nil" then Gui = nil elseif typeof(Gui) == "string" and game.StarterGui:FindFirstChild(tostring(Gui)) then Gui = game.StarterGui[tostring(Gui)]:Clone() Gui.Enabled = true elseif typeof(Gui) == "string" then Gui = nil end
 		
 		game.FrameworkService:CheckArgument(debug.traceback(), "CreatePublicReserveServer", 1, Players, {"table","Instance"})
 		game.FrameworkService:CheckArgument(debug.traceback(), "CreatePublicReserveServer", 2, PlaceID, "number")
@@ -386,7 +388,7 @@ return {"MatchmakingService", "MatchmakingService", {
 		return Code
 	end,
 	CreateReserveServer = function(self, Players, PlaceID,TeleportData, Gui)
-		if Gui == "nil" then Gui = nil elseif typeof(Gui) == "string" and game.StarterGui:FindFirstChild(tostring(Gui)) then Gui = game.StarterGui[tostring(Gui)] elseif typeof(Gui) == "string" then Gui = nil end
+		if Gui == "nil" then Gui = nil elseif typeof(Gui) == "string" and game.StarterGui:FindFirstChild(tostring(Gui)) then Gui = game.StarterGui[tostring(Gui)]:Clone() Gui.Enabled = true elseif typeof(Gui) == "string" then Gui = nil end
 		
 		game.FrameworkService:CheckArgument(debug.traceback(), "CreateReserveServer", 1, Players, {"table","Instance"})
 		game.FrameworkService:CheckArgument(debug.traceback(), "CreateReserveServer", 2, PlaceID, "number")

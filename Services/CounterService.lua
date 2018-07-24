@@ -6,6 +6,8 @@ local cache = {}
 local PendingOperations = {}
 local RepeatedFails = 0
 local CounterDS
+local counterCache
+local counterCacheTime = 0
 return {"CounterService", "CounterService", {
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require = a, b, c, d, e, f, g, h, i, j, k, l
@@ -58,9 +60,9 @@ return {"CounterService", "CounterService", {
 											if vv[1] == 'set' then
 												old[2][i] = vv[2]
 											elseif vv[1] == 'add' then
-												old[2][i] = old[2][i] + vv[2]
+												old[2][i] = (old[2][i] or 0) + vv[2]
 											else
-												old[2][i] = old[2][i] - vv[2]
+												old[2][i] = (old[2][i] or 0) - vv[2]
 											end
 										end
 									end
@@ -88,16 +90,16 @@ return {"CounterService", "CounterService", {
 						RepeatedFails = 0
 					else
 						RepeatedFails = RepeatedFails + 1
-						if RepeatedFails >= 15 then
-							game.FrameworkService:DebugOutput("Couldn't contact webserver for 15 attempts, destroying pending counter data.")
+						if RepeatedFails >= 10 then
+							game.FrameworkService:DebugOutput("Couldn't contact webserver for 10 attempts, destroying pending counter data.")
 							PendingOperations = {} -- We don't want to clutter the memory with pending opps when the website is down.
 						end
 					end
 				end
 	
-				Requests = math.ceil(Requests + (game.FrameworkHttpService.CounterServicePerMin / 4))
+				Requests = math.ceil(Requests + (game.FrameworkHttpService.CounterServicePerMin / 2))
 				if Requests >= game.FrameworkHttpService.CounterServiceCap then Requests = game.FrameworkHttpService.CounterServiceCap end
-			end, {delay = 15, yield = true, onclose = true})
+			end, {delay = 30, yield = true, onclose = true})
 		end
 
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
@@ -125,7 +127,12 @@ return {"CounterService", "CounterService", {
 		local d2t2
 		if CounterDS then
 			pcall(function()
-				local meh = CounterDS:GetAsync("Counters")
+				if not counterCache or counterCacheTime <= os.time() then
+					counterCache = CounterDS:GetAsync("Counters")
+					counterCache = os.time() + 15
+				end
+				
+				local meh = counterCache
 				
 				if meh then
 					d2t = meh[1]
