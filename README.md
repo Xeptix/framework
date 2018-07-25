@@ -7,15 +7,21 @@ Usage is simple, check out the [offical Wiki](https://github.com/Xeptix/framewor
 
 
 # features
-Allows you to very easily create your very own cross-script custom properties, methods, and events for all instances
+Allows you to very easily create your very own cross-script custom properties, methods, and events for all instances. You can even script your own instances!
 
 Extends the Roblox API tenfold
 
 # adds many new services for the following
 
-Global Leaderboards
+Matchmaking
 
-Player Data Handling
+Global Leaderboards W/ Realtime Online Management
+
+Player Data Handling W/ Realtime Online Management
+
+Player Banning W/ Realtime Online Management
+
+Storing Data of any type/size  W/ Realtime Online Management
 
 DevProduct Handling
 
@@ -28,4 +34,4 @@ Online Server Management
 
 # download
 Get the framework for your ROBLOX games here:
-https://www.roblox.com/library/233810446/Xeptix-Framework
+https://www.roblox.com/library/2121014086/framework3
