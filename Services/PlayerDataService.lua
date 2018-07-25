@@ -311,6 +311,7 @@ return {"PlayerDataService", "PlayerDataService", {
 
 
 		local data = {}
+		local setBanData
 		if id >= 1 then
 			--print"PD1"
 			local CompletedReq = false
@@ -336,8 +337,10 @@ return {"PlayerDataService", "PlayerDataService", {
 
 						if Plr then
 							_self.player = Plr
+							setBanData = {Banned = true, BanLift = tonumber(data.banned[2]), BanReason = data.banned[3]}
 							banCheck({internal = {Banned = true, BanLift = tonumber(data.banned[2]), BanReason = data.banned[3]}})
 						end
+
 					end
 					-- couldn't find their data in the database
 					data = {}
@@ -661,6 +664,12 @@ return {"PlayerDataService", "PlayerDataService", {
 			end
 
 			return storage[_self.userid .. "-" .. _self.profile].player
+		end
+
+		if setBanData then
+			for _,v in pairs(setBanData) do
+				_self:iSet(_, v)
+			end
 		end
 
 
