@@ -575,6 +575,13 @@ ModifiedObjects = {
 				data:iSet("Banned", true)
 				data:iSet("BanReason", reason)
 				data:iSet("BanLift", os.time() + seconds)
+				if not data:iGet("BanHistory") then
+					data:iSet("BanHistory",{{os.time(), seconds, reason}})
+				else
+					local bh = data:iGet("BanHistory")
+					table.insert(bh, {os.time(), seconds, reason})
+					data:iSet("BanHistory", bh)
+				end
 				data.lastEdit = data.lastSave + 1
 				data:Save()
 			end
@@ -607,6 +614,13 @@ ModifiedObjects = {
 			data:iSet("Banned", true)
 			data:iSet("BanReason", reason)
 			data:iSet("BanLift", os.time() + seconds)
+			if not data:iGet("BanHistory") then
+				data:iSet("BanHistory",{{os.time(), seconds, reason}})
+			else
+				local bh = data:iGet("BanHistory")
+				table.insert(bh, {os.time(), seconds, reason})
+				data:iSet("BanHistory", bh)
+			end
 
 			table.insert(game.FrameworkHttpService.payload.ban, {userid = self.UserId, reason = reason, seconds = os.time() + seconds})
 		end,

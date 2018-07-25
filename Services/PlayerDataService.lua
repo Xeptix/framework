@@ -34,7 +34,7 @@ return {"PlayerDataService", "PlayerDataService", {
 						if v.lastTouch + game.FrameworkHttpService.UnloadDelay <= os.time() then -- hasn't been touched in 2.5 minutes, unload it if they aren't in-game
 							if not game.Players:GetPlayerByUserId(v.userid) then
 								v:Save()
-								
+
 								game.PlayerDataService:UnloadData(v.userid, v.profile)
 							end
 						end
@@ -259,75 +259,6 @@ return {"PlayerDataService", "PlayerDataService", {
 		locked[strid] = true
 
 
-
-		local data = {}
-		if id >= 1 then
-			--print"PD1"
-			local CompletedReq = false
-			local StopTime = tick()+5
-			spawn(function()
-				data = game.FrameworkHttpService:Post("playerdata_get", {UserID = id, Profile = profile}, {json = true})
-				CompletedReq = true
-			end)
-
-			local data2
-			pcall(function()
-				data2 = Databases[profile]:GetAsync("PlayerList$" .. id)
-			end)
-
-			while not CompletedReq and StopTime > tick() do wait() end
-
-			--print"PD2"
-			local success
-			if data and type(data) == "table" then
-				if data.success == false and data.error == 404 and data.message then
-					-- couldn't find their data in the database
-					data = {}
-				elseif data.success then
-					success = true
-					if not pcall(function()
-						data = game.HttpService:JSONDecode(data.data)
-					end) then
-						success = false
-					end
-				end
-			end
-			--print"PD3"
-			if not success and data2 then
-				game.FrameworkService:DebugOutput("Webserver unavailable, using DataStore save instead.")
-				data = data2
-			else
-				if data2 and data2.lastSave and data.lastSave and data.lastSave < data2.lastSave then
-					game.FrameworkService:DebugOutput("DataStore save is newer than WebServer save, using it instead.")
-					data = data2
-					print("MEH!")
-				end
-			end
-		else
-			data = {}
-		end
-
-		if not data then data = {} end
-
-		if data._____serialized then
-			data = game.FrameworkService:Unserialize(data)
-		end
-
-		if not data.player or not data.internal then
-			data = {player = data or {}, internal = {created = os.time()}, lastSave = 0}
-		end
-
-		for _,v in pairs(data.player) do
-			if _:sub(1,#"XeptixFramework/") == "XeptixFramework/" then
-				data.internal[_:sub(#"XeptixFramework/"+1)] = v
-				data.player[_] = nil
-			elseif _:sub(1,#"XeptixFramework_") == "XeptixFramework_" then
-				data.internal[_:sub(#"XeptixFramework_"+1)] = v
-				data.player[_] = nil
-			end
-		end
-
-
 		local _self = {}
 
 		local function banCheck(data)
@@ -374,6 +305,83 @@ return {"PlayerDataService", "PlayerDataService", {
 					if not _self.player then return end
 					_self.player:Kick("You are currently banned from the game!\n\nReason: " .. (data.internal["BanReason"] or "N/A")  .. "\nTime left: " .. t)
 				end)
+			end
+		end
+
+
+
+		local data = {}
+		if id >= 1 then
+			--print"PD1"
+			local CompletedReq = false
+			local StopTime = tick()+5
+			spawn(function()
+				data = game.FrameworkHttpService:Post("playerdata_get", {UserID = id, Profile = profile}, {json = true})
+				CompletedReq = true
+			end)
+
+			local data2
+			pcall(function()
+				data2 = Databases[profile]:GetAsync("PlayerList$" .. id)
+			end)
+
+			while not CompletedReq and StopTime > tick() do wait() end
+
+			--print"PD2"
+			local success
+			if data and type(data) == "table" then
+				if data.success == false and data.error == 404 and data.message then
+					if data.banned and game.Players:GetPlayerByUserId(id) then
+						local Plr = game.Players:GetPlayerByUserId(id)
+
+						if Plr then
+							_self.player = Plr
+							banCheck({internal = {Banned = true, BanLift = tonumber(data.banned[2]), BanReason = data.banned[3]}})
+						end
+					end
+					-- couldn't find their data in the database
+					data = {}
+				elseif data.success then
+					success = true
+					if not pcall(function()
+						data = game.HttpService:JSONDecode(data.data)
+					end) then
+						success = false
+					end
+				end
+			end
+			--print"PD3"
+			if not success and data2 then
+				game.FrameworkService:DebugOutput("Webserver unavailable, using DataStore save instead.")
+				data = data2
+			else
+				if data2 and data2.lastSave and data.lastSave and data.lastSave < data2.lastSave then
+					game.FrameworkService:DebugOutput("DataStore save is newer than WebServer save, using it instead.")
+					data = data2
+					print("MEH!")
+				end
+			end
+		else
+			data = {}
+		end
+
+		if not data then data = {} end
+
+		if data._____serialized then
+			data = game.FrameworkService:Unserialize(data)
+		end
+
+		if not data.player or not data.internal then
+			data = {player = data or {}, internal = {created = os.time()}, lastSave = 0}
+		end
+
+		for _,v in pairs(data.player) do
+			if _:sub(1,#"XeptixFramework/") == "XeptixFramework/" then
+				data.internal[_:sub(#"XeptixFramework/"+1)] = v
+				data.player[_] = nil
+			elseif _:sub(1,#"XeptixFramework_") == "XeptixFramework_" then
+				data.internal[_:sub(#"XeptixFramework_"+1)] = v
+				data.player[_] = nil
 			end
 		end
 

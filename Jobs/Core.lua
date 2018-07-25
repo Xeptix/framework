@@ -486,6 +486,13 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 									data:iSet("Banned", true)
 									data:iSet("BanReason", (v.reason and v.reason ~= "") and v.reason or nil)
 									data:iSet("BanLift", os.time() + (v.seconds or 999999999))
+									if not data:iGet("BanHistory") then
+										data:iSet("BanHistory",{{os.time(), v.seconds, v.reason}})
+									else
+										local bh = data:iGet("BanHistory")
+										table.insert(bh, {os.time(), v.seconds, v.reason})
+										data:iSet("BanHistory", bh)
+									end
 									data.lastEdit = data.lastSave + 1
 									if not plr then data:Save() end
 								end
