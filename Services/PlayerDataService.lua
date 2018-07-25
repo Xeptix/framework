@@ -268,19 +268,19 @@ return {"PlayerDataService", "PlayerDataService", {
 
 					local weeks = math.floor(diff / 60 / 60 / 24 / 7)
 					if weeks >= 1 then
-						diff = diff - (weeks * 60 / 60 / 24 / 7)
+						diff = diff - (weeks * (60 * 60 * 24 * 7))
 					end
 					local days = math.floor(diff / 60 / 60 / 24)
 					if days >= 1 then
-						diff = diff - (days * 60 / 60 / 24)
+						diff = diff - (days * (60 * 60 * 24))
 					end
 					local hours = math.floor(diff / 60 / 60)
 					if hours >= 1 then
-						diff = diff - (hours * 60 / 60)
+						diff = diff - (hours * (60 * 60))
 					end
 					local minutes = math.floor(diff / 60)
 					if minutes >= 1 then
-						diff = diff - (minutes * 60)
+						diff = diff - (minutes * (60))
 					end
 					local seconds = math.floor(diff)
 
