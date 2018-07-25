@@ -477,11 +477,11 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 							end
 
 							requests[_].complete = true
-						elseif v.type == "ban" and v.player then
+						elseif v.type == "ban" and tonumber(v.player) then
 							local plr = game.Players:GetPlayerByUserId(v.player)
 
 							--if plr then
-								local data = plr:LoadData(v.player)
+								local data = plr:LoadData(tonumber(v.player))
 								if data then
 									data:iSet("Banned", true)
 									data:iSet("BanReason", (v.reason and v.reason ~= "") and v.reason or nil)
