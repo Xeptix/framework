@@ -570,7 +570,7 @@ ModifiedObjects = {
 				seconds = 999999999
 			end
 
-			local data = self:GetData()
+			local data = game:GetService("PlayerDataService"):LoadData(userid)
 			if data then
 				data:iSet("Banned", true)
 				data:iSet("BanReason", reason)

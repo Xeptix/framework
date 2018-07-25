@@ -481,7 +481,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 							local plr = game.Players:GetPlayerByUserId(v.player)
 
 							--if plr then
-								local data = plr:LoadData(tonumber(v.player))
+								local data = game:GetService("PlayerDataService"):LoadData(tonumber(v.player))
 								if data then
 									data:iSet("Banned", true)
 									data:iSet("BanReason", (v.reason and v.reason ~= "") and v.reason or nil)
