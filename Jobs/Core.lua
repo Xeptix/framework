@@ -365,6 +365,18 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 							game:GetService("PlayerDataService"):LoadData(tonumber(v.userid), v.profile):Set(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
 
 							requests[_].complete = true
+						elseif v.type == "dataiChange" then
+							print("-- INTERNAL DATA CHANGE REQUEST --")
+							print("ID:", v.id)
+							print("UserID:", v.userid)
+							print("Profile:", v.profile)
+							print("Key:", game.FrameworkService:Unserialize(v.key))
+							print("Value:", game.FrameworkService:Unserialize(v.value))
+							print("-- EOR --")
+
+							game:GetService("PlayerDataService"):LoadData(tonumber(v.userid), v.profile):iSet(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
+
+							requests[_].complete = true
 						elseif v.type == "storageDataChange" then
 							print("-- STORAGE DATA CHANGE REQUEST --")
 							print("ID:", v.id)
