@@ -4,18 +4,18 @@ local argumentCheckingEnabled = true
 local Legacy
 return {"FrameworkService", "FrameworkService", {
 	Version = "3.1", -- t is for testing
-	Build = 458,
+	Build = 510,
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l, m)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require, ferror = a, b, c, d, e, f, g, h, i, j, k, l, m
 
 		self:LockProperty("Version", 2)--
 		self:LockProperty("Build", 2)
-		
+
 		self:DebugOutput("Service " .. self .. " has started successfully!")
 	end,
-	Output = function(self, ...) 
+	Output = function(self, ...)
 		if not self.outputEnabled then return end
-		
+
 		print("[ Framework ]", ...)
 	end,
 	outputEnabled = false,
@@ -24,16 +24,16 @@ return {"FrameworkService", "FrameworkService", {
 		local a,s = {...},""
 		for _,v in pairs(a) do
 			local e = s == "" and "" or "_%%%SPACE%%%_"
-			
+
 			s = e .. tostring(v)
 		end
-		
+
 		if game:IsFrameworkServiceLoaded("FrameworkHttpService") then
 			--todo
 		end
-		
+
 		if not self.debugMode then return end
-		
+
 		print("[ Framework *D ]", ...)--
 	end,
 	DisableArgumentChecking = function(self)
@@ -41,19 +41,19 @@ return {"FrameworkService", "FrameworkService", {
 	end,
 	CheckArgument = function(self, stack, func, arg, got, expecting)
 		if argumentCheckingEnabled == false then return end
-		
+
 		local t = typeof(got):lower()
-		
+
 		if typeof(expecting) == "table" then
-			local goodToGo = false 
-			
+			local goodToGo = false
+
 			for _,v in pairs(expecting) do
 				if t == v:lower() then
 					goodToGo = true
 					break
 				end
 			end
-			
+
 			if not goodToGo then
 				ferror(stack, "bad argument #" .. arg .. " to '" .. (func or "?") .. "' (" .. table.join(expecting, ",", "or") .. " expected, got " .. t .. ")", 0)
 			end
@@ -80,7 +80,7 @@ return {"FrameworkService", "FrameworkService", {
 	end,
 	LightSerialize = function(self, x, o)
 		local s = {}
-		
+
 		if typeof(x) == "Instance" then
 			s._____serialized = "Instance"
 			s.x = {}
@@ -89,7 +89,7 @@ return {"FrameworkService", "FrameworkService", {
 					s.x[i] = self:LightSerialize(v)
 				end
 			end
-			
+
 			s.c = {}
 			for _,v in pairs(x:GetChildren()) do
 				table.insert(s.c, self:LightSerialize(v))
@@ -107,7 +107,7 @@ return {"FrameworkService", "FrameworkService", {
 			s._____serialized = typeof(x)
 			s.x = tostring(x)
 		end
-		
+
 		return o and s or game.HttpService:JSONEncode(s)
 	end,
 	LightUnserialize = function(self, x)
@@ -115,7 +115,7 @@ return {"FrameworkService", "FrameworkService", {
 	end,
 	Serialize = function(self, x, o)
 		local s = {}
-		
+
 		if typeof(x) == "Instance" then
 			s._____serialized = "Instance"
 			s.x = {}
@@ -124,7 +124,7 @@ return {"FrameworkService", "FrameworkService", {
 					s.x[i] = self:Serialize(v)
 				end
 			end
-			
+
 			s.c = {}
 			for _,v in pairs(x:GetChildren()) do
 				table.insert(s.c, self:Serialize(v))
@@ -140,7 +140,7 @@ return {"FrameworkService", "FrameworkService", {
 			s._____serialized = typeof(x)
 			s.x = tostring(x)
 		end
-		
+
 		return o and s or game.HttpService:JSONEncode(s)
 	end,
 	Unserialize = function(self, x)
@@ -148,7 +148,7 @@ return {"FrameworkService", "FrameworkService", {
 		pcall(function()
 			s = game.HttpService:JSONDecode(x)
 		end)
-		
+
 		if s and typeof(s) == "table" and s._____serialized and s.x then
 			if s._____serialized == "string" then
 				return s.x
@@ -159,17 +159,17 @@ return {"FrameworkService", "FrameworkService", {
 				for _,v in pairs(s.x) do
 					n[self:Unserialize(_)] = self:Unserialize(v)
 				end
-				
+
 				return n
 			elseif s._____serialized == "Instance" then
 				local i
 				pcall(function() i = Instance.new(self:Unserialize(s.x.ClassName)) end)
-				
+
 				if i then
 					for _,v in pairs(s.x) do
 						pcall(function() i[_] = self:Unserialize(v) end)
 					end
-					
+
 					for _,v in pairs(s.c) do
 						local c = self:Unserialize(v)
 						if c then
@@ -177,7 +177,7 @@ return {"FrameworkService", "FrameworkService", {
 						end
 					end
 				end
-				
+
 				return i
 			elseif s._____serialized == "boolean" then
 				return s.x == "true"
@@ -197,7 +197,7 @@ return {"FrameworkService", "FrameworkService", {
 				local x = string.split(s.x, ";")
 				local pos = CFrame.new(unpack(string.split(x[1]:gsub(" ",""):gsub("{", ""):gsub("}", ""),","))).p
 				local sz = Vector3.new(unpack(string.split(x[2]:gsub(" ",""):gsub("{", ""):gsub("}", ""),",")))
-				
+
 				local SizeOffset = sz/2
 				local Point1 = pos - SizeOffset
 				local Point2 = pos + SizeOffset
@@ -207,7 +207,7 @@ return {"FrameworkService", "FrameworkService", {
 				local a = CFrame.new(unpack(string.split(x[1]:gsub(" ",""):gsub("{", ""):gsub("}", ""),","))).p
 				local pos = Vector3int16.new(a.x,a.y,a.z)
 				local sz = Vector3int16.new(unpack(string.split(x[2]:gsub(" ",""):gsub("{", ""):gsub("}", ""),",")))
-				
+
 				local SizeOffset = sz/2
 				local Point1 = pos - SizeOffset
 				local Point2 = pos + SizeOffset
@@ -222,15 +222,15 @@ return {"FrameworkService", "FrameworkService", {
 			for _,v in pairs(x) do
 				n[self:Unserialize(_)] = self:Unserialize(v)
 			end
-			
+
 			return n
 		end
-		
+
 		return x
 	end,
 	ShutdownServer = function(self, msg)
 		game.FrameworkService:CheckArgument(debug.traceback(), "ShutdownServer", 1, msg, {"string", "nil"})
-		
+
 		game.Players:KickAll(msg)
 		game.Players.PlayerAdded:connect(function(Plr)
 			Plr:Kick(msg)
@@ -239,9 +239,9 @@ return {"FrameworkService", "FrameworkService", {
 	-- Notice: The method below (GetLegacyFrameworkObject) is not guarenteed to function properly, and it is not advised to use it. This is only to allow v1/v2 places to operate with the new framework without (very much) code changes.
 	GetLegacyFrameworkObject = function(self) --todo: returns a legacy object equivilent to the "_G.framework"/"framework" variables from v1/v2, so that way people can just throw in "framework = game.FrameworkService:GetLegacyFrameworkObject()" for support without altering code.
 		if Legacy then return Legacy end
-		
+
 		LegacyObj = {}
-		
+
 		Legacy = setmetatable(Legacy, {})-- do we need this anymore?
 		return Legacy
 	end
