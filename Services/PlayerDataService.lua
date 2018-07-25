@@ -388,8 +388,6 @@ return {"PlayerDataService", "PlayerDataService", {
 			end
 		end
 
-		banCheck(data)
-
 
 		if id >= 1 then
 			pcall(function()
@@ -422,7 +420,7 @@ return {"PlayerDataService", "PlayerDataService", {
 						end
 					end
 
-					banCheck(UpdatedData)
+					if profile == 1 then banCheck(UpdatedData) end
 				end)
 			end)
 		end
@@ -481,6 +479,14 @@ return {"PlayerDataService", "PlayerDataService", {
 					end)
 				end
 			end)
+		end
+
+		if profile ~= 1 and _self.player then
+			spawn(function()
+				game.Players.PlayerDataService:LoadData(id, 1)
+			end)
+		elseif _self.player then
+			banCheck(data)
 		end
 
 		local function touch(_, i)
