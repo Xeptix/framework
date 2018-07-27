@@ -382,7 +382,7 @@ return {"MatchmakingService", "MatchmakingService", {
 			TeleportData = TeleportData or {}
 			TeleportData.___RsrvCode = Code
 			TeleportData.___PublicRsrv = true
-			TeleportService:TeleportToPrivateServer(PlaceID, Code, Players, "", TeleportData, Gui:Clone()) -- last nil = custom screen
+			TeleportService:TeleportToPrivateServer(PlaceID, Code, Players, "", TeleportData, Gui and Gui:Clone() or nil) -- last nil = custom screen
 		end)
 
 		return Code
@@ -406,7 +406,7 @@ return {"MatchmakingService", "MatchmakingService", {
 		pcall(function()
 			TeleportData = TeleportData or {}
 			TeleportData.___RsrvCode = Code
-			TeleportService:TeleportToPrivateServer(PlaceID, Code, Players, "", TeleportData, Gui:Clone()) -- last nil = custom screen
+			TeleportService:TeleportToPrivateServer(PlaceID, Code, Players, "", TeleportData, Gui and Gui:Clone() or nil) -- last nil = custom screen
 		end)
 
 		return Code
