@@ -627,6 +627,8 @@ ModifiedObjects = {
 		GetData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "GetData", 1, profile, {"number", "nil"})
 
+			if not profile then profile = 1 end
+
 			if game:Is("Local") then
 				return game:GetService("PlayerDataService").storage[self.userId .. "-" .. profile]
 			end
@@ -636,10 +638,14 @@ ModifiedObjects = {
 		WaitForData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "WaitForData", 1, profile, {"number", "nil"})
 
+			if not profile then profile = 1 end
+
 			return game:GetService("PlayerDataService"):WaitForData(self, profile)
 		end,
 		SaveData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "SaveData", 1, profile, {"number", "nil"})
+
+			if not profile then profile = 1 end
 
 			game.FrameworkService:LockServer(debug.traceback(), "SaveData")
 
@@ -647,6 +653,8 @@ ModifiedObjects = {
 		end,
 		DeleteData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "DeleteData", 1, profile, {"number", "nil"})
+
+			if not profile then profile = 1 end
 
 			game.FrameworkService:LockServer(debug.traceback(), "DeleteData")
 
@@ -656,12 +664,16 @@ ModifiedObjects = {
 			game.FrameworkService:CheckArgument(debug.traceback(), "CloneData", 1, profile, {"number", "nil"})
 			game.FrameworkService:CheckArgument(debug.traceback(), "CloneData", 2, profile2, {"number", "nil"})
 
+			if not profile then profile = 1 end
+
 			game.FrameworkService:LockServer(debug.traceback(), "CloneData")
 
 			return game:GetService("PlayerDataService"):CloneData(self, profile, profile2)
 		end,
 		UnloadData = function(self, profile)
 			game.FrameworkService:CheckArgument(debug.traceback(), "UnloadData", 1, profile, {"number", "nil"})
+
+			if not profile then profile = 1 end
 
 			game.FrameworkService:LockServer(debug.traceback(), "UnloadData")
 
