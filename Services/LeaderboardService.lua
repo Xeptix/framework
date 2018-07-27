@@ -3,17 +3,17 @@
 return {"LeaderboardService", "LeaderboardService", {
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require = a, b, c, d, e, f, g, h, i, j, k, l
-		
+
 		self:SetEvent("OnUpdate")
-		
+
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
 	end,
 	cache = {},
 	pending = {},
 	FetchLeaderboard = function(self, opt)
 		game.FrameworkService:CheckArgument(debug.traceback(), "FetchLeaderboard", 1, opt,"table")
-		
-		if game:Is("Client") then
+
+		if game:Is("Client") and not game:Is("Server") then
 			local leaderboard = game:GetFrameworkModule().ClientToServerRedirection:InvokeServer("LeaderboardService", "FetchLeaderboard", opt)
 			local didConnect
 			local signal = game:CreateSignal()
@@ -30,7 +30,7 @@ return {"LeaderboardService", "LeaderboardService", {
 						end)
 					end
 				end
-				
+
 				return function(self, ...)
 					if key:lower() == "connect" then
 						return signal:connect(...)
@@ -43,17 +43,17 @@ return {"LeaderboardService", "LeaderboardService", {
 					end
 				end
 			end})
-			
+
 			function leaderboard:GetPlayerRank(player)
 				return game.LeaderboardService:GetPlayerRank(player, leaderboard)
 			end
-			
+
 			self.cache[leaderboard.id] = leaderboard
 			return self.cache[leaderboard.id]
 		end
-		
+
 		game.FrameworkService:LockConnected(debug.traceback(), "FetcnLeaderboard")
-		
+
 		if not opt then opt = {} end
 		local Correct = {"Key", "Start", "Limit", "Direction", "Op", "Query", "Value", "Sort", "ID"}
 		for _,v in pairs(Correct) do
@@ -86,7 +86,7 @@ return {"LeaderboardService", "LeaderboardService", {
 			if opt.Op and opt.Op ~= "=" and opt.Op ~= "<" and opt.Op ~= ">" and opt.Op ~= "<=" and opt.Op ~= ">=" then opt.Op = "=" end
 		else opt.Value = "" end
 		opt.Sort = tostring(opt.Sort) or ""
-		
+
 		local leaderboard = {}
 		local _t = tick()
 		game.FrameworkInternalService:LoadSha1()
@@ -101,7 +101,7 @@ return {"LeaderboardService", "LeaderboardService", {
 		end
 		--print("SHA-1 OP",tick()-_t)
 		leaderboard.ID = leaderboard.id
-		
+
 		opt.ID = leaderboard.id
 		for _,v in pairs(opt) do
 			if _:lower() ~= _ then
@@ -110,16 +110,16 @@ return {"LeaderboardService", "LeaderboardService", {
 			end
 		end
 		leaderboard.opt = opt
-		
+
 		if self.cache[leaderboard.id] then
 			return self.cache[leaderboard.id]
 		end
-		
+
 		if self.pending[leaderboard.id] then
 			wait(1)
 			return self:FetchLeaderboard(opt)
 		end
-		
+
 		self.pending[leaderboard.id] = true
 		local result = game.FrameworkHttpService:Post("leaderboard_get", opt, {json = true})
 		local data
@@ -128,20 +128,20 @@ return {"LeaderboardService", "LeaderboardService", {
 		elseif not result or not result.success then
 			game.FrameworkService:DebugOutput("LeaderboardService fetch request failed, trying again in " .. game.FrameworkHttpService.FailedRequestRepeatDelay .. " second(s)")
 			wait(game.FrameworkHttpService.FailedRequestRepeatDelay)
-			
+
 			self.pending[leaderboard.id] = nil
 			return self:FetchLeaderboard(opt)
 		else
 			data = result.list
 		end
-		
+
 		leaderboard.list = data
 		leaderboard.List = data
 		leaderboard.rankCache = {}
-		
+
 		function leaderboard:GetPlayerRank(player) -- can be multiple players
 			game.FrameworkService:CheckArgument(debug.traceback(), "GetPlayerRank", 1, player,{"number", "table", "Instance"})
-			
+
 			local ids = {}
 			if typeof(player) == "Instance" and player:IsA("Player") then table.insert(ids, player.userId) end
 			if typeof(player) == "number" then table.insert(ids, player) end
@@ -153,7 +153,7 @@ return {"LeaderboardService", "LeaderboardService", {
 						table.insert(ids, v.userId)
 					end
 				end
-				
+
 				local list = {}
 				if #ids >= 1 then
 					for i = 1, #ids do
@@ -163,10 +163,10 @@ return {"LeaderboardService", "LeaderboardService", {
 				end
 				return unpack(list)
 			end
-			
+
 			if #ids <= 0 then return 0 end
 			if self.rankCache[tostring(ids)] then return self.rankCache[tostring(ids)] end
-		
+
 			self.opt.player = player
 			local result = game.FrameworkHttpService:Post("leaderboard_rank", self.opt, {json = true})
 			local rank
@@ -178,11 +178,11 @@ return {"LeaderboardService", "LeaderboardService", {
 			else
 				rank = result.rank
 			end
-			
+
 			self.rankCache[tostring(ids)] = rank
 			return rank
 		end
-		
+
 		local didConnect
 		local signal = game:CreateSignal()
 		leaderboard.Updated = setmetatable({}, {__index = function(self, key)
@@ -198,7 +198,7 @@ return {"LeaderboardService", "LeaderboardService", {
 					end)
 				end
 			end
-			
+
 			return function(self, ...)
 				if key:lower() == "connect" then
 					return signal:connect(...)
@@ -211,12 +211,12 @@ return {"LeaderboardService", "LeaderboardService", {
 				end
 			end
 		end})
-		
-		
+
+
 		leaderboard.t = os.time() + 300
 		game.ThreadService:Thread(function()
 			if os.time() <= leaderboard.t then return end
-			
+
 			-- update the leaderboard
 			local result = game.FrameworkHttpService:Post("leaderboard_get", leaderboard.opt, {json = true})
 			local data
@@ -228,31 +228,31 @@ return {"LeaderboardService", "LeaderboardService", {
 			else
 				data = result.list
 			end
-			
+
 			self.cache[leaderboard.id].list = data
 			self.cache[leaderboard.id].List = data
 			self.cache[leaderboard.id].rankCache = {}
-			
+
 			game.LeaderboardService.OnUpdate:fire(leaderboard.id)
 			game:GetFrameworkModule().ClientLeaderboardUpdateTrigger:FireAllClients(leaderboard.id)
 		end, {delay = 60*30, yield = false})
-		
+
 		self.cache[leaderboard.id] = leaderboard
 		self.pending[leaderboard.id] = nil
 		return self.cache[leaderboard.id]
 	end,
 	GetPlayerRank = function(self, player, leaderboard) -- pass in the leaderboard obj from above
-		if game:Is("Client") then
+		if game:Is("Client") and not game:Is("Server") then
 			return game:GetFrameworkModule().ClientToServerRedirection:InvokeServer("LeaderboardService", "GetPlayerRank", player, leaderboard)
 		end
-		
+
 		game.FrameworkService:LockConnected(debug.traceback(), "GetPlayerRank")
-		
+
 		if not leaderboard.GetPlayerRank and leaderboard.opt then
 			--leaderboard.opt.id = leaderboard.id
 			return self:FetchLeaderboard(leaderboard.opt):GetPlayerRank(player)
 		end
-		
+
 		return leaderboard:GetPlayerRank(player)
 	end
 }}

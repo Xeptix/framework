@@ -1,4 +1,4 @@
--- Xeptix Framework 3.1 (build 510; debug disabled; framework prints disabled)
+-- Xeptix Framework 3.1 (build 511; debug disabled; framework prints disabled)
 -- Documentation: https://github.com/xeptix/framework/wiki
 -- Website: https://framework.xeptix.com
 -- This framework is designed to help you out with development by adding many awesome services, and allowing you to create
