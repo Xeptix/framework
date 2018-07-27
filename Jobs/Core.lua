@@ -25,7 +25,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 		end)
 
 		spawn(function()
-			FrameworkModule:WaitForChild("WebserverChat").OnClientEvent:connect(function(message, color, size)
+			FrameworkModule:WaitForChild("WebserverChat", 15).OnClientEvent:connect(function(message, color, size)
 				game.StarterGui:SetCore("ChatMakeSystemMessage", {
 					Text = message; -- Required. Has to be a string!
 					Color = color; -- Cyan is (0, 255 / 255, 255 / 255). Optional, defaults to white: Color3.new(255 / 255, 255 / 255, 243 / 255)
@@ -104,23 +104,9 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 			})
 		end)
 
-
-		--print("Bro...")
-		local PlsWork = Instance.new("Folder", workspace)
-		PlsWork.Name = "PlsWork"
-		local v1 = Instance.new("StringValue", workspace)
-		v1.Name = "Msg"
-		local v2 = Instance.new("StringValue", workspace)
-		v2.Name = "MsgType"
-
 		local LastError = nil
 		local Stack = {}
 		game:GetService("LogService").MessageOut:connect(function(message, messagetype)
-			v1.Value = message
-			v2.Value = tostring(messagetype)
-			local x = v1:Clone()
-			v2:Clone().Parent = x
-			x.Parent = PlsWork
 			if messagetype == Enum.MessageType.MessageInfo and message == "Stack End" then
 				table.insert(Stack, message)
 
