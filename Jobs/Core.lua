@@ -526,13 +526,28 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 					end
 				end, {delay = 60, yield = false})
 
-				game:BindToClose(function() wait(7)
+				game:BindToClose(function() wait(6)
 					local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
 
 					if res and res.success then
 						LastSuccessfulPayload = os.time()
 						FrameworkHttpService:ClearPayload()
 						ProcessWebserverRequests(res.requests)
+						pcall(function()
+							local x = res
+							FrameworkHttpService.PayloadDelay = x.PayloadDelay
+							FrameworkHttpService.AutosaveDelay = x.AutosaveDelay
+							FrameworkHttpService.UnloadDelay = x.UnloadDelay
+							FrameworkHttpService.StorageServicePerMin = x.StorageServicePerMin
+							FrameworkHttpService.StorageServiceCap = x.StorageServiceCap
+							FrameworkHttpService.CounterServicePerMin = x.CounterServicePerMin
+							FrameworkHttpService.CounterServiceCap = x.CounterServiceCap
+							FrameworkHttpService.FailedRequestRepeatDelay = x.FailedRequestRepeatDelay
+							FrameworkHttpService.CachedItemExpieryTime = x.CachedItemExpieryTime
+							FrameworkHttpService.CounterServiceRefetch = x.CounterServiceRefetch
+							FrameworkHttpService.MatchmakingCache = x.MatchmakingCache
+							FrameworkHttpService.ParamCache = x.ParamCache
+						end)
 					else
 						game.FrameworkService:DebugOutput("Payload request failed.")
 					end end)
