@@ -9,6 +9,7 @@ return {"ThreadService", "ThreadService", {
 
 		local t = os.time()
 		local function process()
+			t = os.time()
 			local Task = table.remove(Tasks, 1)
 			if typeof(Task) == "function" then
 				pcall(Task)

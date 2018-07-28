@@ -16,23 +16,23 @@ return {"CounterService", "CounterService", {
 			pcall(function()
 				CounterDS = game:GetService("DataStoreService"):GetDataStore("XeptixFramework_Counters")
 			end)
-			
+
 			game.ThreadService:Thread(function()
 				for _,v in pairs(cache) do
 					if v[1] + game.FrameworkHttpService.CachedItemExpieryTime <= os.time() then
 						cache[_] = nil
 					end--
 				end
-				
+
 				local AreOperationsPending = false
 				for _,v in pairs(PendingOperations) do AreOperationsPending = true break end
-				
+
 				if AreOperationsPending then
 					local result
 					spawn(function() result = game.FrameworkHttpService:Post("counter_sync", PendingOperations, {json = true}) end)
 					local et = tick() + 5
 					while et > tick() and not result do wait() end
-					
+
 					if CounterDS then
 						local t = os.time()
 						local s, e = pcall(function()
@@ -48,11 +48,11 @@ return {"CounterService", "CounterService", {
 											end
 										end
 									end
-									
-									
+
+
 									return new
 								end
-								
+
 								for i,v in pairs(PendingOperations) do
 									for ii = 1,#v do
 										local vv = v[ii]
@@ -67,24 +67,24 @@ return {"CounterService", "CounterService", {
 										end
 									end
 								end
-								
-								
+
+
 								old[1] = t
-								
+
 								if result and result.success then
 									old[3] = t
 								end
-								
+
 								return old
 							end)
 						end)
-						
+
 						if (not result or not result.success) and s then
 							result = {success = true}
 						end
 					end
-					
-					
+
+
 					if result and result.success then
 						PendingOperations = {}
 						RepeatedFails = 0
@@ -96,7 +96,7 @@ return {"CounterService", "CounterService", {
 						end
 					end
 				end
-	
+
 				Requests = math.ceil(Requests + (game.FrameworkHttpService.CounterServicePerMin / 2))
 				if Requests >= game.FrameworkHttpService.CounterServiceCap then Requests = game.FrameworkHttpService.CounterServiceCap end
 			end, {delay = 30, yield = true, onclose = true})
@@ -107,20 +107,20 @@ return {"CounterService", "CounterService", {
 	Get = function(self, Key, NoCache)
 		game.FrameworkService:LockServer(debug.traceback(), "Get")
 		game.FrameworkService:LockConnected(debug.traceback(), "Get")
-		
+
 		local Key = tostring(Key)
 		if cache[Key] and not NoCache and (Requests <= 0 or cache[Key][1] + game.FrameworkHttpService.CounterServiceRefetch >= os.time()) then
 			--cache[Key][1] = os.time()
 			return cache[Key][2]
 		end
-		
+
 		if Requests <= 0 then repeat wait() until Requests >= 1 end Requests = Requests - 1
-		
+
 		local result
 		spawn(function() result = game.FrameworkHttpService:Post("counter_get", {Key = Key}, {json = true}) end)
 		local et = tick() + 5
 		while et > tick() and not result do wait() end
-		
+
 		local data
 		local data2
 		local d2t
@@ -131,9 +131,9 @@ return {"CounterService", "CounterService", {
 					counterCache = CounterDS:GetAsync("Counters")
 					counterCache = os.time() + 15
 				end
-				
+
 				local meh = counterCache
-				
+
 				if meh then
 					d2t = meh[1]
 					d2t2 = meh[3]
@@ -141,17 +141,17 @@ return {"CounterService", "CounterService", {
 				end
 			end)
 		end
-		
+
 		if result and not result.success and result.error == 404 then
 			data = 0
 		elseif (not result or not result.success) and not CounterDS then
 			wait(game.FrameworkHttpService.FailedRequestRepeatDelay)
-			
+
 			return self:Get(Key, NoCache)
 		else
 			data = result.value
 		end
-		
+
 		if (result and result.success) or data2 then
 			if (result and result.success) and not data2 then
 				-- nothing
@@ -166,22 +166,22 @@ return {"CounterService", "CounterService", {
 			end
 		else
 			wait(game.FrameworkHttpService.FailedRequestRepeatDelay)
-			
+
 			return self:Get(Key, NoCache)
 		end
-		
+
 		data = tonumber(data) or 0
-		
+
 		cache[Key] = {os.time(), data}
-		
+
 		return data
 	end,
 	Set = function(self, Key, Value)
 		game.FrameworkService:CheckArgument(debug.traceback(), "Set", 2, Value, "number")--
-		
+
 		game.FrameworkService:LockServer(debug.traceback(), "Set")
 		game.FrameworkService:LockConnected(debug.traceback(), "Set")
-		
+
 		local Key = tostring(Key)
 		if cache[Key] then
 			--cache[Key][1] = os.time()
@@ -189,19 +189,19 @@ return {"CounterService", "CounterService", {
 		else
 			cache[Key] = {os.time(), Value}
 		end
-		
+
 		if not PendingOperations[Key] then
 			PendingOperations[Key] = {}
 		end
-		
+
 		table.insert(PendingOperations[Key], {"set", Value})
-		
+
 		return Value
 	end,
 	Update = function(self, Keys, UpdateFunctions) --todo: in documentation note that this may overwrite some changes made in other servers, similar to Set, unlike Add/Sub
 		game.FrameworkService:LockServer(debug.traceback(), "Update")
 		game.FrameworkService:LockConnected(debug.traceback(), "Update")
-		
+
 		if typeof(Keys) == "table" then
 			if typeof(UpdateFunctions) == "table" then
 				for _,v in pairs(Keys) do
@@ -226,47 +226,47 @@ return {"CounterService", "CounterService", {
 	end,
 	Add = function(self, Key, Num)
 		game.FrameworkService:CheckArgument(debug.traceback(), "Add", 2, Num, {"number", "nil"})
-		
+
 		if not Num then Num = 1 end
-		
+
 		game.FrameworkService:LockServer(debug.traceback(), "Add")
 		game.FrameworkService:LockConnected(debug.traceback(), "Add")
-		
+
 		local Key = tostring(Key)
 		if cache[Key] then
 			--cache[Key][1] = os.time()
 			cache[Key][2] = cache[Key][2] + Num
 		end
-		
+
 		if not PendingOperations[Key] then
 			PendingOperations[Key] = {}
 		end
-		
+
 		table.insert(PendingOperations[Key], {"add", Num})
 	end,
 	Subtract = function(self, Key, Num)
 		game.FrameworkService:CheckArgument(debug.traceback(), "Subtract", 2, Num, {"number", "nil"})
-		
+
 		if not Num then Num = 1 end
-		
+
 		game.FrameworkService:LockServer(debug.traceback(), "Subtract")
 		game.FrameworkService:LockConnected(debug.traceback(), "Subtract")
-		
+
 		local Key = tostring(Key)
 		if cache[Key] then
 			--cache[Key][1] = os.time()
 			cache[Key][2] = cache[Key][2] - Num
 		end
-		
+
 		if not PendingOperations[Key] then
 			PendingOperations[Key] = {}
 		end
-		
+
 		table.insert(PendingOperations[Key], {"subtract", Num})
 	end,
 	Sub = function(self, Key, Num)
 		game.FrameworkService:CheckArgument(debug.traceback(), "Sub", 2, Num, {"number", "nil"})
-		
+
 		return self:Subtract(Key, Num)
 	end
 }}
