@@ -535,18 +535,18 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 						ProcessWebserverRequests(res.requests)
 						pcall(function()
 							local x = res
-							FrameworkHttpService.PayloadDelay = x.PayloadDelay
-							FrameworkHttpService.AutosaveDelay = x.AutosaveDelay
-							FrameworkHttpService.UnloadDelay = x.UnloadDelay
-							FrameworkHttpService.StorageServicePerMin = x.StorageServicePerMin
-							FrameworkHttpService.StorageServiceCap = x.StorageServiceCap
-							FrameworkHttpService.CounterServicePerMin = x.CounterServicePerMin
-							FrameworkHttpService.CounterServiceCap = x.CounterServiceCap
-							FrameworkHttpService.FailedRequestRepeatDelay = x.FailedRequestRepeatDelay
-							FrameworkHttpService.CachedItemExpieryTime = x.CachedItemExpieryTime
-							FrameworkHttpService.CounterServiceRefetch = x.CounterServiceRefetch
-							FrameworkHttpService.MatchmakingCache = x.MatchmakingCache
-							FrameworkHttpService.ParamCache = x.ParamCache
+							FrameworkHttpService.PayloadDelay = x.PD
+							FrameworkHttpService.AutosaveDelay = x.AD
+							FrameworkHttpService.UnloadDelay = x.UD
+							FrameworkHttpService.StorageServicePerMin = x.SSPM
+							FrameworkHttpService.StorageServiceCap = x.SSC
+							FrameworkHttpService.CounterServicePerMin = x.CSPM
+							FrameworkHttpService.CounterServiceCap = x.CSC
+							FrameworkHttpService.FailedRequestRepeatDelay = x.FRRD
+							FrameworkHttpService.CachedItemExpieryTime = x.CIET
+							FrameworkHttpService.CounterServiceRefetch = x.CSR
+							FrameworkHttpService.MatchmakingCache = x.MC
+							FrameworkHttpService.ParamCache = x.PC
 						end)
 					else
 						game.FrameworkService:DebugOutput("Payload request failed.")
