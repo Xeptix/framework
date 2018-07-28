@@ -533,26 +533,12 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 						LastSuccessfulPayload = os.time()
 						FrameworkHttpService:ClearPayload()
 						ProcessWebserverRequests(res.requests)
-						pcall(function()
-							local x = res
-							FrameworkHttpService.PayloadDelay = x.PD
-							FrameworkHttpService.AutosaveDelay = x.AD
-							FrameworkHttpService.UnloadDelay = x.UD
-							FrameworkHttpService.StorageServicePerMin = x.SSPM
-							FrameworkHttpService.StorageServiceCap = x.SSC
-							FrameworkHttpService.CounterServicePerMin = x.CSPM
-							FrameworkHttpService.CounterServiceCap = x.CSC
-							FrameworkHttpService.FailedRequestRepeatDelay = x.FRRD
-							FrameworkHttpService.CachedItemExpieryTime = x.CIET
-							FrameworkHttpService.CounterServiceRefetch = x.CSR
-							FrameworkHttpService.MatchmakingCache = x.MC
-							FrameworkHttpService.ParamCache = x.PC
-						end)
 					else
 						game.FrameworkService:DebugOutput("Payload request failed.")
 					end end)
 
-				ThreadService:Thread(function()
+				local stopPayloadThread,updatePayloadThreadDb
+				stopPayloadThread, updatePayloadThreadDb = ThreadService:Thread(function()
 					if game.Players.NumPlayers == 0 then wait(3) end
 					local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
 
@@ -560,6 +546,25 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 						LastSuccessfulPayload = os.time()
 						FrameworkHttpService:ClearPayload()
 						ProcessWebserverRequests(res.requests)
+						pcall(function()
+							local x = res
+							FrameworkHttpService.PayloadDelay = x.PD or FrameworkHttpService.PayloadDelay
+							FrameworkHttpService.AutosaveDelay = x.AD or FrameworkHttpService.AutosaveDelay
+							FrameworkHttpService.UnloadDelay = x.UD or FrameworkHttpService.UnloadDelay
+							FrameworkHttpService.StorageServicePerMin = x.SSPM or FrameworkHttpService.StorageServicePerMin
+							FrameworkHttpService.StorageServiceCap = x.SSC or FrameworkHttpService.StorageServiceCap
+							FrameworkHttpService.CounterServicePerMin = x.CSPM or FrameworkHttpService.CounterServicePerMin
+							FrameworkHttpService.CounterServiceCap = x.CSC or FrameworkHttpService.CounterServiceCap
+							FrameworkHttpService.FailedRequestRepeatDelay = x.FRRD or FrameworkHttpService.FailedRequestRepeatDelay
+							FrameworkHttpService.CachedItemExpieryTime = x.CIET or FrameworkHttpService.CachedItemExpieryTime
+							FrameworkHttpService.CounterServiceRefetch = x.CSR or FrameworkHttpService.CounterServiceRefetch
+							FrameworkHttpService.MatchmakingCache = x.MC or FrameworkHttpService.MatchmakingCache
+							FrameworkHttpService.ParamCache = x.PC or FrameworkHttpService.ParamCache
+						end)
+
+						if res.PD and updatePayloadThreadDb then
+							updatePayloadThreadDb(res.PD or FrameworkHttpService.PayloadDelay)
+						end
 					else
 						game.FrameworkService:DebugOutput("Payload request failed.")
 					end

@@ -4,7 +4,7 @@ local argumentCheckingEnabled = true
 local Legacy
 return {"FrameworkService", "FrameworkService", {
 	Version = "3.1", -- t is for testing
-	Build = 510,
+	Build = 512,
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l, m)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require, ferror = a, b, c, d, e, f, g, h, i, j, k, l, m
 

@@ -24,7 +24,7 @@ return {"ThreadService", "ThreadService", {
 							table.insert(Tasks, Task)
 						end--
 					end
-					
+
 					if Task.yield then
 						pcall(Task.task)
 						requeue()
@@ -37,18 +37,18 @@ return {"ThreadService", "ThreadService", {
 		end
 		game:GetService("RunService").Stepped:connect(function(_, x)
 			t = t + x
-			
+
 			local nt = #Tasks -- n't
 			if nt > 0 then
 				process()
 			end
 		end)
-		
+
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
 	end,
 	Run = function(self, func)
 		game.FrameworkService:CheckArgument(debug.traceback(), "Run", 1, func, "function")
-		
+
 		table.insert(Tasks, func)
 	end,
 	threads = {},
@@ -56,16 +56,16 @@ return {"ThreadService", "ThreadService", {
 	Thread = function(self, func, opt)
 		game.FrameworkService:CheckArgument(debug.traceback(), "Thread", 1, func, "function")
 		game.FrameworkService:CheckArgument(debug.traceback(), "Thread", 2, opt, {"table", "nil"})
-		
+
 		if not opt then opt = {} else
 			for _,v in pairs(opt) do
 				opt[_:lower()] = v
 			end
 		end
-		
+
 		local id = self.nextid + 1
 		self.nextid = id
-		
+
 		table.insert(Tasks, {
 			id = id,
 			task = func,
@@ -74,35 +74,48 @@ return {"ThreadService", "ThreadService", {
 			onclose = opt.onclose == true,
 			runnow = opt.runnow == true
 		})
-		
+
 		if opt.onclose == true then
 			game:BindToClose(function()
 				if StopRunOnClose[id] then return end
-				
+
 				pcall(func)
 			end)
 		end
-		
+
 		if opt.runnow then
 			spawn(func)
 		end
-		
+
 		local rekt
 		return function()
 			if rekt then return true end
-			
+
 			for i = 1,100 do -- we'll find a better way to go about this sumdai
 				for _,v in pairs(Tasks) do
 					if typeof(v) == "table" and v.id == id then
 						if Tasks[_].onclose then StopRunOnClose[id] = true end
-						
+
 						Tasks[_].stop = true
 						rekt = true
 						return true
 					end
 				end
-				
+
 				wait(.1)
+			end
+		end, function(newDelay)
+			if typeof(newDelay) == "number" then
+				for i = 1,100 do -- we'll find a better way to go about this sumdai
+					for _,v in pairs(Tasks) do
+						if typeof(v) == "table" and v.id == id then
+							Tasks[_].db = newDelay
+							return true
+						end
+					end
+
+					wait(.1)
+				end
 			end
 		end
 	end
