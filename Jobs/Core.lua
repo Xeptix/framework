@@ -546,6 +546,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 						LastSuccessfulPayload = os.time()
 						FrameworkHttpService:ClearPayload()
 						ProcessWebserverRequests(res.requests)
+						local oldPD = FrameworkHttpService.PayloadDelay
 						pcall(function()
 							local x = res
 							FrameworkHttpService.PayloadDelay = x.PD or FrameworkHttpService.PayloadDelay
@@ -562,8 +563,8 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 							FrameworkHttpService.ParamCache = x.PC or FrameworkHttpService.ParamCache
 						end)
 
-						if res.PD and updatePayloadThreadDb then
-							updatePayloadThreadDb(res.PD or FrameworkHttpService.PayloadDelay)
+						if res.PD and updatePayloadThreadDb and res.PD ~= oldPD then
+							updatePayloadThreadDb(res.PD)
 						end
 					else
 						game.FrameworkService:DebugOutput("Payload request failed.")

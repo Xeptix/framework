@@ -3,6 +3,7 @@
 
 local Tasks = {}
 local StopRunOnClose = {}
+local DelayChanges = {}
 return {"ThreadService", "ThreadService", {
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require = a, b, c, d, e, f, g, h, i, j, k, l
@@ -15,9 +16,17 @@ return {"ThreadService", "ThreadService", {
 				pcall(Task)
 			elseif typeof(Task) == "table" then
 				if Task.next and Task.next >= t and not Task.stop then
+					if DelayChanges[Task.id] then
+						Task.db = DelayChanges[Task.id]
+						DelayChanges[Task.id] = nil
+					end
 					table.insert(Tasks, Task)
 				elseif not Task.stop then
 					local function requeue()
+						if DelayChanges[Task.id] then
+							Task.db = DelayChanges[Task.id]
+							DelayChanges[Task.id] = nil
+						end
 						if Task.db > 1/30 then
 							Task.next = t + Task.db
 							table.insert(Tasks, Task)
@@ -44,6 +53,19 @@ return {"ThreadService", "ThreadService", {
 				process()
 			end
 		end)
+
+		self:Thread(function()
+			local x = {}
+			for i,v in pairs(DelayChanges) do
+				table.insert(x, i)
+			end
+
+			wait(10)
+
+			for i,v in pairs(x) do
+				DelayChanges[v] = nil
+			end
+		end, {delay = 300, yield = false})
 
 		game:GetService("FrameworkService"):DebugOutput("Service " .. self .. " has started successfully!")
 	end,
@@ -103,20 +125,11 @@ return {"ThreadService", "ThreadService", {
 					end
 				end
 
-				wait(.1)
+				wait(.05)
 			end
 		end, function(newDelay)
 			if typeof(newDelay) == "number" then
-				for i = 1,100 do -- we'll find a better way to go about this sumdai
-					for _,v in pairs(Tasks) do
-						if typeof(v) == "table" and v.id == id then
-							Tasks[_].db = newDelay
-							return true
-						end
-					end
-
-					wait(.1)
-				end
+				DelayChanges[id] = newDelay
 			end
 		end
 	end
