@@ -34,6 +34,12 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 			pcall(function() WCF:Destroy() end)
 		end
 
+		if WebConnection.Connection then
+			Instance.new("Folder", self).Name = "IsConnected"
+		elseif self:FindFirstChild("IsConnected") then
+			WebConnection.Connection = true
+		end
+
 		self:SetProperty("WebConnection", WebConnection)
 		self:LockProperty("WebConnection", 2)
 

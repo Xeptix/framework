@@ -1588,7 +1588,7 @@ return function(sf, environment)
 	environment.workspace = game.Workspace
 	environment.Workspace = game.Workspace
 	environment.Instance = Instance
-	environment.print = print
+	--environment.print = print
 	environment.require = require
 	environment.type = type
 	environment.typeof = typeof

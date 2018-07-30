@@ -483,7 +483,7 @@ return {"PlayerDataService", "PlayerDataService", {
 
 		if profile ~= 1 and _self.player then
 			spawn(function()
-				game.Players.PlayerDataService:LoadData(id, 1)
+				game.PlayerDataService:LoadData(id, 1)
 			end)
 		elseif _self.player then
 			banCheck(data)
