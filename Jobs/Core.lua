@@ -65,7 +65,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 	end
 
 
-	if FrameworkModule.WebConnection.Connection.Value and game:Is("Server") then -- Payload Stuff!
+	if FrameworkHttpService.WebConnection.Connection and game:Is("Server") then -- Payload Stuff!
 		game.Players.PlayerAdded:connect(function(Player)
 			local VID = FrameworkInternalService.VisitId + 1
 			FrameworkInternalService.VisitId = VID
@@ -231,7 +231,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				info = info
 			})
 		end)
-	elseif FrameworkModule.WebConnection.Connection.Value then
+	elseif FrameworkHttpService.WebConnection.Connection then
 		local LastError = nil
 		local Stack = {}
 		local Module = game:GetFrameworkModule()
@@ -319,15 +319,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 	spawn(function()
 		FrameworkHttpService:WaitUntilReady()
 
-		if game:Is("Server") and FrameworkModule.WebConnection.Connection.Value and FrameworkHttpService.HttpEnabled then
-			local WebConnection = {}
-			for _,v in pairs(FrameworkModule.WebConnection:GetChildren()) do
-				WebConnection[v.Name] = v.Value
-			end
-
-			FrameworkHttpService:SetProperty("WebConnection", WebConnection)
-			FrameworkHttpService:LockProperty("WebConnection", 2)--
-
+		if game:Is("Server") and FrameworkHttpService.WebConnection.Connection and FrameworkHttpService.HttpEnabled then
 			local WebserverChat = FrameworkModule:findFirstChild("WebserverChat") or Instance.new("RemoteEvent", FrameworkModule)
 			WebserverChat.Name = "WebserverChat"
 

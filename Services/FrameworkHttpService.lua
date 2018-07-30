@@ -22,6 +22,20 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		self:SetProperty("MatchmakingCache", 15)
 		self:SetProperty("ParamCache", 60)
 		self:SetProperty("PayloadEnabled", false)
+		local WebConnection = {}
+		local WCF = game:GetFrameworkModule():FindFirstChild("WebConnection")
+		if WCF then
+			if game:Is("Server") then
+				for _,v in pairs(WCF:GetChildren()) do
+					WebConnection[v.Name] = v.Value
+				end
+			end
+
+			pcall(function() WCF:Destroy() end)
+		end
+
+		self:SetProperty("WebConnection", WebConnection)
+		self:LockProperty("WebConnection", 2)
 
 		local function lock()
 			if true then return end
@@ -42,7 +56,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 			self:LockProperty("HttpConnected", 2)
 		end
 
-		if game:Is("Server") and game:GetFrameworkModule().WebConnection.Connection.Value then
+		if game:Is("Server") and self.WebConnection.Connection then
 			spawn(function()
 				if game:GetFrameworkModule():FindFirstChild("SID") then
 					game:GetFrameworkModule().SID:Destroy()
@@ -125,7 +139,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 
 				lock()--
 			end)
-		elseif game:Is("Local") and game:GetFrameworkModule().WebConnection.Connection.Value then
+		elseif game:Is("Local") and self.WebConnection.Connection then
 			local SID = game:GetFrameworkModule():WaitForChild("SID", 5)
 			if SID then
 				game:SetProperty("Info", "PID=" .. game.PlaceId .. "&SID=" .. SID.Value)
@@ -134,10 +148,6 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				game.FrameworkInternalService:LockProperty("ServerId", 2)
 
 				self:SetProperty("Ready", true)
-
-				game:GetFrameworkModule().WebConnection.ApiKey.Value = ""
-				game:GetFrameworkModule().WebConnection.GameKey.Value = ""
-				game:GetFrameworkModule().WebConnection.SecretKey.Value = ""
 
 				self:SetProperty("HttpFailedInitialization", true)
 
@@ -149,11 +159,6 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 				game.FrameworkInternalService:LockProperty("ServerId", 2)
 
 				self:SetProperty("Ready", true)
-
-				game:GetFrameworkModule().WebConnection.ApiKey.Value = ""
-				game:GetFrameworkModule().WebConnection.GameKey.Value = ""
-				game:GetFrameworkModule().WebConnection.SecretKey.Value = ""
-
 				self:SetProperty("HttpFailedInitialization", true)
 
 				lock()
@@ -165,10 +170,6 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 			game.FrameworkInternalService:LockProperty("ServerId", 2)
 
 			self:SetProperty("Ready", true)
-
-			game:GetFrameworkModule().WebConnection.ApiKey.Value = ""
-			game:GetFrameworkModule().WebConnection.GameKey.Value = ""
-			game:GetFrameworkModule().WebConnection.SecretKey.Value = ""
 
 			self:SetProperty("HttpFailedInitialization", true)
 
@@ -208,9 +209,9 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		spawn(function()
 			local s, ee = pcall(function()
 				result = self._:GetAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
-					apikey = game:GetFrameworkModule().WebConnection.ApiKey.Value,
-					gamekey = game:GetFrameworkModule().WebConnection.GameKey.Value,
-					secret = game:GetFrameworkModule().WebConnection.SecretKey.Value,
+					apikey = self.WebConnection.ApiKey,
+					gamekey = self.WebConnection.GameKey,
+					secret = self.WebConnection.SecretKey,
 					ServerId = game.FrameworkInternalService.ServerId,
 					JobId = game.JobId or "0",
 					PlaceId = game.PlaceId or "0",
@@ -266,9 +267,9 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 		spawn(function()
 			local s, ee = pcall(function()
 				result = self._:PostAsync(self:AppendQueryString("https://api.xeptix.com/framework/v3/"..url, self:Encode(self:QueryString({
-					apikey = game:GetFrameworkModule().WebConnection.ApiKey.Value,
-					gamekey = game:GetFrameworkModule().WebConnection.GameKey.Value,
-					secret = game:GetFrameworkModule().WebConnection.SecretKey.Value,
+					apikey = self.WebConnection.ApiKey,
+					gamekey = self.WebConnection.GameKey,
+					secret = self.WebConnection.SecretKey,
 					ServerId = game.FrameworkInternalService.ServerId,
 					JobId = game.JobId or "0",
 					PlaceId = game.PlaceId or "0",

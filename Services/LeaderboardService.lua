@@ -97,7 +97,7 @@ return {"LeaderboardService", "LeaderboardService", {
 		elseif opt.ID then
 			leaderboard.id = opt.ID
 		else
-			leaderboard.id = game.FrameworkInternalService:LoadSha1().sha1("Leaderboard-" .. opt.Key .. "-" .. opt.Start .. "-" .. opt.Limit .. "-" .. opt.Direction .. "-" .. opt.Op .. "-" .. opt.Value .. "-" .. opt.Sort .. "-" .. opt.Query ..  ":" .. game:GetFrameworkModule().WebConnection.GameKey.Value)
+			leaderboard.id = game.FrameworkInternalService:LoadSha1().sha1("Leaderboard-" .. opt.Key .. "-" .. opt.Start .. "-" .. opt.Limit .. "-" .. opt.Direction .. "-" .. opt.Op .. "-" .. opt.Value .. "-" .. opt.Sort .. "-" .. opt.Query ..  ":" .. game.FrameworkHttpService.WebConnection.GameKey)
 		end
 		--print("SHA-1 OP",tick()-_t)
 		leaderboard.ID = leaderboard.id
