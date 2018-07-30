@@ -36,7 +36,7 @@ return {"FrameworkHttpService", "FrameworkHttpService", {
 
 		if WebConnection.Connection then
 			Instance.new("Folder", self).Name = "IsConnected"
-		elseif self:FindFirstChild("IsConnected") then
+		elseif self:FindFirstChild("IsConnected") or game:GetFrameworkModule():FindFirstChild("SID") then
 			WebConnection.Connection = true
 		end
 
