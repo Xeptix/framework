@@ -43,6 +43,7 @@ superLockedProperties.CanReadProperty = true
 superLockedProperties.CanWriteProperty = true
 APIDump = game.HttpService:JSONDecode(require(FrameworkModule[".xeptixframework."].APIDump))
 RbxUtility = LoadLibrary("RbxUtility")
+ObjCache = _G
 ModifiedObjects = {
 	["root"] = {
 		IsA = function(self, ClassName)
@@ -685,7 +686,6 @@ StructureBase = {
 	AdvancedTestingService = {"game", "workspace", "lighting", "players"}
 }
 
-ObjCache = {}
 function Object(Obj)
 	if ObjCache[Obj] then
 		return ObjCache[Obj]
