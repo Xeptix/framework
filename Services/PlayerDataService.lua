@@ -97,10 +97,10 @@ return {"PlayerDataService", "PlayerDataService", {
 
 						if internal then
 							_self.idata[v.Name] = val
-							_self.iChanged:fire(v.Name, f, ff)
+							_self.iChanged:fire(v.Name, val, oldv)
 						else
 							_self.data[v.Name] = val
-							_self.Changed:fire(v.Name, f, ff)
+							_self.Changed:fire(v.Name, val, oldv)
 						end--
 
 						oldv = val
@@ -117,10 +117,10 @@ return {"PlayerDataService", "PlayerDataService", {
 						f,ff = "table", "table"
 					end
 
-					if old then
-						_self.iChanged:fire(v.Name, _self.idata[v.Name], old)
+					if old ~= nil then
+						_self.iChanged:fire(v.Name, f, ff)
 					else
-						_self.iChanged:fire(v.Name, _self.idata[v.Name], nil)
+						_self.iChanged:fire(v.Name, f, nil)
 					end
 				end)
 				Data.InternalData.ChildRemoved:connect(function(v)
@@ -141,10 +141,10 @@ return {"PlayerDataService", "PlayerDataService", {
 						f,ff = "table", "table"
 					end
 
-					if old then
-						_self.Changed:fire(v.Name, _self.data[v.Name], old)
+					if old ~= nil then
+						_self.Changed:fire(v.Name, f, ff)
 					else
-						_self.Changed:fire(v.Name, _self.data[v.Name], nil)
+						_self.Changed:fire(v.Name, f, nil)
 					end
 				end)
 				Data.PlayerData.ChildRemoved:connect(function(v)
@@ -547,7 +547,8 @@ return {"PlayerDataService", "PlayerDataService", {
 			end
 
 			local old = storage[_self.userid .. "-" .. _self.profile].data[Key]
-			if old == Value then return end
+			local t = typeof(Value)
+			if old == Value and t ~= "table" and t ~= "Instance" then return end
 
 			if PlayerData:findFirstChild(Key) then
 				game.FrameworkInternalService:UpdateVal(PlayerData[Key], Value)
@@ -564,6 +565,10 @@ return {"PlayerDataService", "PlayerDataService", {
 			storage[_self.userid .. "-" .. _self.profile].data[Key] = Value
 			touch(Key)
 			edit(Key)
+
+			if t == "table" then
+				Value, old = "table", "table"
+			end
 			storage[_self.userid .. "-" .. _self.profile].Changed:fire(Key, Value, old)
 		end
 
@@ -584,7 +589,8 @@ return {"PlayerDataService", "PlayerDataService", {
 			end
 
 			local old = storage[_self.userid .. "-" .. _self.profile].idata[Key]
-			if old == Value then return end
+			local t = typeof(Value)
+			if old == Value and t ~= "table" and t ~= "Instance" then return end
 
 			if InternalData:findFirstChild(Key) then
 				game.FrameworkInternalService:UpdateVal(InternalData[Key], Value)--
