@@ -4,7 +4,7 @@ local argumentCheckingEnabled = true
 local Legacy
 return {"FrameworkService", "FrameworkService", {
 	Version = "3.1", -- t is for testing
-	Build = 513,
+	Build = 514,
 	_StartService = function(self, a, b, c, d, e, f, g, h, i, j, k, l, m)
 		game, Game, workspace, Workspace, table, string, math, typeof, type, Instance, print, require, ferror = a, b, c, d, e, f, g, h, i, j, k, l, m
 
@@ -78,10 +78,11 @@ return {"FrameworkService", "FrameworkService", {
 			ferror(stack, name .. " requires your game to be connected to the framework's webservers. Open your game in Studio and use the Xeptix Framework Plugin to connect your game!")
 		end
 	end,
-	LightSerialize = function(self, x, o)
+	LightSerialize = function(self, x, o, isk)
 		local s = {}
 
-		if typeof(x) == "Instance" then
+		local tox = typeof(x)
+		if tox == "Instance" then
 			s._____serialized = "Instance"
 			s.x = {}
 			for i,v in pairs(x:GetProperties()) do
@@ -94,17 +95,21 @@ return {"FrameworkService", "FrameworkService", {
 			for _,v in pairs(x:GetChildren()) do
 				table.insert(s.c, self:LightSerialize(v))
 			end
-		elseif typeof(x) == "table" then
+		elseif tox == "table" then
 			s._____serialized = "table"
 			local n = {}
 			for _,v in pairs(x) do
-				n[self:LightSerialize(_)] = self:LightSerialize(v)--
+				n[self:LightSerialize(_, nil, true)] = self:LightSerialize(v)--
 			end
 			s.x = n
-		elseif typeof(x) == "string" or typeof(x) == "number" or typeof(x) == "boolean" then
+		elseif tox == "string" then
+			return x
+		elseif not isk and tox == "number" then
+			return x
+		elseif not isk and  tox == "boolean" then
 			return x
 		else
-			s._____serialized = typeof(x)
+			s._____serialized = tox
 			s.x = tostring(x)
 		end
 
