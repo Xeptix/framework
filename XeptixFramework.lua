@@ -41,7 +41,7 @@ superLockedProperties.SetEvent = true
 superLockedProperties.HasProperty = true
 superLockedProperties.CanReadProperty = true
 superLockedProperties.CanWriteProperty = true
-APIDump = game.HttpService:JSONDecode(require(FrameworkModule[".xeptixframework."].APIDump))
+spawn(function() APIDump = game.HttpService:JSONDecode(require(FrameworkModule[".xeptixframework."].APIDump)) end)
 RbxUtility = LoadLibrary("RbxUtility")
 ObjCache = setmetatable({}, {__mode = "v"})
 ModifiedObjects = {
@@ -340,6 +340,10 @@ ModifiedObjects = {
 			rawset(self, name, nil)
 		end,
 		GetProperties = function(self)
+			if not APIDump then
+				repeat wait() until APIDump
+			end
+
 			local Properties = {}
 			local trace
 			trace = function(class)
@@ -361,6 +365,10 @@ ModifiedObjects = {
 			return Properties
 		end,
 		GetMethods = function(self)
+			if not APIDump then
+				repeat wait() until APIDump
+			end
+
 			local Methods = {}
 			local trace
 			trace = function(class)
@@ -382,6 +390,10 @@ ModifiedObjects = {
 			return Methods
 		end,
 		GetEvents = function(self)
+			if not APIDump then
+				repeat wait() until APIDump
+			end
+
 			local Events = {}
 			local trace
 			trace = function(class)
@@ -403,6 +415,10 @@ ModifiedObjects = {
 			return Events
 		end,
 		GetCallbacks = function(self)
+			if not APIDump then
+				repeat wait() until APIDump
+			end
+
 			local Callbacks = {}
 			local trace
 			trace = function(class)
