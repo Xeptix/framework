@@ -43,7 +43,7 @@ superLockedProperties.CanReadProperty = true
 superLockedProperties.CanWriteProperty = true
 APIDump = game.HttpService:JSONDecode(require(FrameworkModule[".xeptixframework."].APIDump))
 RbxUtility = LoadLibrary("RbxUtility")
-ObjCache = _G
+ObjCache = setmetatable({}, {__mode = "v"})
 ModifiedObjects = {
 	["root"] = {
 		IsA = function(self, ClassName)
@@ -724,6 +724,7 @@ function Object(Obj)
 	Modified.____c = {}
 
 	local NewObj
+	local checkedEvents = false
 	NewObj = setmetatable(Modified, {
 		__index = function(self, index)
 			local l_ = rawget(self, "____l")
@@ -748,44 +749,109 @@ function Object(Obj)
 
 				if not pcall(function()
 					value = o[index]
-					local vt = typeof(value)
+					local vt = Original.typeof(value)
 					if vt == "function" then -- ok, methods, time to do some magic!
 						value = function(self, ...)
+							local b
 							local a = {...}
-							for i = 1,#a do
-								local ot = Original.typeof(a[i])
-								if ot == "table" and a[i].____o then
-									a[i] = a[i].____o
-								elseif ot == "table" then
-									table.recursive(a[i], function(t, k, v)
-										if Original.typeof(v) == "table" and v.____o then
-											t[k] = v.____o
-										end
-									end)
-								end
-							end
+							--[[pcall(function()
+								b = {o[index](o, unpack(a))}
+								b = table.rebuild(b)
+							end)
 
-							-- if you get an error here, it is not an error in the framework's code. ignore this line in the stack trace. this just redirects to roblox's api.
-							local b = {o[index](o, unpack(a))}
-							for i = 1,#b do
-								local ot = typeof(b[i])
-								if ot == "Instance" then
-									b[i] = Object(b[i])
-								elseif ot == "table" then
-									table.recursive(b[i], function(t, k, v)
-										if Original.typeof(v) == "Instance" then
-											t[k] = Object(v)
-										end
-									end)
-								end
-							end
+							if not b then]]
+								a = table.rebuild(a, function(v, valtype)
+									if valtype == "table" and v.____o then
+										return v.____o
+									else
+										return v
+									end
+								end)
 
-							return unpack(b)
+								-- if you get an error here, it is not an error in the framework's code. ignore this line in the stack trace. this just redirects to roblox's api.
+								b = {o[index](o, unpack(a))}
+								if #b == 1 and b[1] == nil then
+									-- nothing?
+									return
+								else
+									b = table.rebuild(b)
+								end
+
+								return unpack(b)
+							--end
+
+
+							--return unpack(b)
 						end
 					elseif vt == "Instance" then
 						value = Object(value)
 					elseif vt == "RBXScriptSignal" then
-						value = rawget(self, "____e")[index] or value
+						local ____e = rawget(self, "____e")
+						if not ____e[index] and not checkedEvents then
+							checkedEvents = true
+							for _,v in pairs(NewObj:GetEvents()) do -- hacky event stuff yay!!!
+								pcall(function()
+									local rbx = Obj[_]
+									if typeof(rbx) == "RBXScriptSignal" then
+										--local signal = RbxUtility:CreateSignal()
+										--local c = signal.connect;
+										local signal = {}
+										local first
+										local hah = setmetatable({}, {__mode="k"})
+										function signal:connect(f)
+											local rc = rbx:connect(function(...)
+												local hax = {...}
+												hax = table.rebuild(hax)
+
+												f(unpack(hax))
+											end)
+
+											hah[f] = rc
+
+											return rc
+										end
+										function signal:Connect(f)
+											return signal:connect(f)
+										end
+										function signal:wait(f)
+											return rbx:wait(f)
+										end
+										function signal:Wait(f)
+											return signal:wait(f)
+										end
+										function signal:Fire(...)
+											return signal:fire(...)
+										end
+										function signal:Disconnect()
+											return signal:disconnect()
+										end
+										function signal:fire(...)
+											for _,v in pairs(hah) do
+												if _ and v and v.Connected then
+													_(...)
+												else
+													hah[_] = nil
+												end
+											end
+										end
+										function signal:disconnect()
+											for _,v in pairs(hah) do
+												if _ and v and v.Connected then
+													v:disconnect()
+												else
+													hah[_] = nil
+												end
+											end
+										end
+										function signal:softdisconnect()
+											hah = {}
+										end
+										rawget(NewObj, "____e")[_] = signal
+									end
+								end)
+							end
+						end
+						value = ____e[index] or value
 					end
 				end) then
 					ferror(debug.traceback(), index .. " is not a valid member of " .. self.ClassName, 0)
@@ -895,9 +961,9 @@ function Object(Obj)
 		end
 	})
 
-	rawset(NewObj, "____c", NewObj:GetCallbacks())
+	if Obj:IsA("MarketplaceService") then rawset(NewObj, "____c", NewObj:GetCallbacks()) end
 
-	Obj.Changed:connect(function()
+	--[[Obj.Changed:connect(function()
 		if not Obj.Parent then
 			ObjCache[Obj] = nil
 			pcall(function()
@@ -906,74 +972,10 @@ function Object(Obj)
 		elseif Obj.Parent and not ObjCache[Obj] then
 			ObjCache[Obj] = NewObj
 		end
-	end)
+	end)]]
 
 	--if NewObj.ClassName ~= "DataModel" then
-		for _,v in pairs(NewObj:GetEvents()) do -- hacky event stuff yay!!!
-			pcall(function()
-				local rbx = NewObj[_]
-				if typeof(rbx) == "RBXScriptSignal" then
-					--local signal = RbxUtility:CreateSignal()
-					--local c = signal.connect;
-					local signal = {}
-					local first
-					local hah = {}
-					function signal:connect(f)
-						local rc = rbx:connect(function(...)
-							local hax = {...}
-							for hi,mate in pairs(hax) do
-								if typeof(mate) == "Instance" then
-									hax[hi] = Object(mate)
-								end
-							end
 
-							f(unpack(hax))
-						end)
-
-						hah[f] = rc
-
-						return rc
-					end
-					function signal:Connect(f)
-						return signal:connect(f)
-					end
-					function signal:wait(f)
-						return rbx:wait(f)
-					end
-					function signal:Wait(f)
-						return signal:wait(f)
-					end
-					function signal:Fire(...)
-						return signal:fire(...)
-					end
-					function signal:Disconnect()
-						return signal:disconnect()
-					end
-					function signal:fire(...)
-						for _,v in pairs(hah) do
-							if _ and v and v.Connected then
-								_(...)
-							else
-								hah[_] = nil
-							end
-						end
-					end
-					function signal:disconnect()
-						for _,v in pairs(hah) do
-							if _ and v and v.Connected then
-								v:disconnect()
-							else
-								hah[_] = nil
-							end
-						end
-					end
-					function signal:softdisconnect()
-						hah = {}
-					end
-					rawget(NewObj, "____e")[_] = signal
-				end
-			end)
-		end
 	--end
 
 	ObjCache[Obj] = NewObj
@@ -1174,9 +1176,37 @@ table = NewMeta(Original.table, {
 			f(t, i, v)
 
 			if typeof(v) == "table" then
-				table.recursive(v, f)
+				t[i] = table.recursive(v, f)
 			end
 		end
+
+		return t
+	end,
+	rebuild = function(t, f)
+		game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
+		game.FrameworkService:CheckArgument(debug.traceback(), nil, 2, f, {"nil", "function"})
+
+		if not f then f = function(val, valtype) if valtype == "Instance" then return Object(val) end return val end end
+
+		local New = {}
+		for k,v in pairs(t) do
+			local otv = Original.typeof(v)
+			local ok = k
+			local otk = Original.typeof(k)
+			if otk == "table" and not k.____o then
+				k = table.rebuild(k, f)
+			else
+				k = f(k, otk)
+			end
+			if otv == "table" and not v.____o then
+				New[k] = table.rebuild(v, f)
+			else
+				New[k] = f(v, otv)
+			end
+		end
+
+
+		return New
 	end,
 	random = function(t)
 		game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, t, "table")
@@ -1582,7 +1612,7 @@ FrameworkService = game:StartJob("Core")
 
 
 -- Return the function to modify the environment
-return function(sf, environment)
+return function(sf, environment, s)
 	environment.game = game
 	environment.Game = game
 	environment.workspace = game.Workspace
@@ -1597,6 +1627,8 @@ return function(sf, environment)
 	environment.math = math
 	environment.string = string
 	environment.tostring = tostring
+	environment.script = Object(s)
+	environment.Script = Object(s)
 
 	sf(0, environment)
 end

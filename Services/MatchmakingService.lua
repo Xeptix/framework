@@ -331,12 +331,21 @@ return {"MatchmakingService", "MatchmakingService", {
 		return data
 	end,
 	WaitForReserveCode = function(self) -- Only works in reserve servers, this waits until we figure out the reservecode ;)
-		return game:GetFrameworkModule():WaitForChild("RsrvCode").Value
+		local a = game:GetFrameworkModule():WaitForChild("RsrvCode").Value
+		local b = game:GetFrameworkModule():FindFirstChild("RsrvPublic")
+		local c = b ~= nil
+
+		return a, c
 	end,
 	MakeReservePublic = function(self, public) -- {Server Only} Only works in reserve servers, allows it to be shown/joinable in matchmaking
 		game.FrameworkService:LockServer(debug.traceback(), "MakeReservePublic")
 
 		local thisServerCode = self:WaitForReserveCode()
+		local fm = game:GetFrameworkModule()
+		local v = fm:FindFirstChild("RsrvPublic") or Instance.new("BoolValue")
+		v.Name = "RsrvPublic"
+		v.Value = true
+		v.Parent = fm
 		game.FrameworkHttpService.payload._rp = 1
 	end,
 	SendReserveCodeToServer = function(self, code, public)
@@ -347,13 +356,13 @@ return {"MatchmakingService", "MatchmakingService", {
 	ReceiveReserveServerCode = function(self, code, public)
 		game.FrameworkService:LockServer(debug.traceback(), "ReceiveReserveServerCode")
 
-		if ReserveCode then return end
+		if ReserveCode then return ReserveCode end
 
 		ReserveCode = code
 		game.FrameworkHttpService.payload._rc = code
 
 		local fm = game:GetFrameworkModule()
-		local v = Instance.new("StringValue")
+		local v = fm:FindFirstChild("RsrvCode") or Instance.new("StringValue")
 		v.Name = "RsrvCode"
 		v.Value = code
 		v.Parent = fm

@@ -38,6 +38,8 @@ return {"PlayerDataService", "PlayerDataService", {
 								game.PlayerDataService:UnloadData(v.userid, v.profile)
 							end
 						end
+					elseif
+						storage[_] = nil
 					end
 
 					if v.AutoSave and v.lastSave and v.lastSave + game.FrameworkHttpService.AutosaveDelay <= os.time() then
@@ -592,12 +594,14 @@ return {"PlayerDataService", "PlayerDataService", {
 			local t = typeof(Value)
 			if old == Value and t ~= "table" and t ~= "Instance" then return end
 
-			if InternalData:findFirstChild(Key) then
-				game.FrameworkInternalService:UpdateVal(InternalData[Key], Value)--
-			else
-				local x = game.FrameworkInternalService:Var2Val(Value)
-				x.Name = Key
-				x.Parent = InternalData
+			if Key ~= "KeyTimestamps" then
+				if InternalData:findFirstChild(Key) then
+					game.FrameworkInternalService:UpdateVal(InternalData[Key], Value)--
+				else
+					local x = game.FrameworkInternalService:Var2Val(Value)
+					x.Name = Key
+					x.Parent = InternalData
+				end
 			end
 
 			storage[_self.userid .. "-" .. _self.profile].idata[Key] = Value
