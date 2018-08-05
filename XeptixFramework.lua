@@ -41,7 +41,7 @@ superLockedProperties.SetEvent = true
 superLockedProperties.HasProperty = true
 superLockedProperties.CanReadProperty = true
 superLockedProperties.CanWriteProperty = true
-spawn(function() APIDump = game.HttpService:JSONDecode(require(FrameworkModule[".xeptixframework."].APIDump)) end)
+APIDump = require(FrameworkModule[".xeptixframework."].APIDump)
 RbxUtility = LoadLibrary("RbxUtility")
 ObjCache = setmetatable({}, {__mode = "v"})
 ModifiedObjects = {
