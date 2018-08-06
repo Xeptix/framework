@@ -14,11 +14,19 @@ return {"PlayerDataService", "PlayerDataService", {
 			if game:GetFrameworkModule():FindFirstChild("ClientDataReplicator") then
 				game:GetFrameworkModule().ClientDataReplicator:Destroy()
 			end
+			if game:GetFrameworkModule():FindFirstChild("ClientDataRemote") then
+				game:GetFrameworkModule().ClientDataRemote:Destroy()
+			end
 
 			local ClientDataReplicator = Instance.new("Folder")
 			ClientDataReplicator.Parent = game:GetFrameworkModule()
 			ClientDataReplicator.Name = "ClientDataReplicator"
 			self:SetProperty("ClientDataReplicator", ClientDataReplicator)
+
+			local ClientDataRemote = Instance.new("RemoteEvent")
+			ClientDataRemote.Parent = game:GetFrameworkModule()
+			ClientDataRemote.Name = "ClientDataRemote"
+			self:SetProperty("ClientDataRemote", ClientDataRemote)
 
 			pcall(function()
 				Databases[1] = game:GetService("DataStoreService"):GetDataStore("PlayerDataStore_PlayerData") -- for compatibility with framework v2 and v1
@@ -38,8 +46,6 @@ return {"PlayerDataService", "PlayerDataService", {
 								game.PlayerDataService:UnloadData(v.userid, v.profile)
 							end
 						end
-					elseif
-						storage[_] = nil
 					end
 
 					if v.AutoSave and v.lastSave and v.lastSave + game.FrameworkHttpService.AutosaveDelay <= os.time() then
@@ -57,6 +63,7 @@ return {"PlayerDataService", "PlayerDataService", {
 		else
 			-- We are going to replicate how the server handle's data to a read-only version on the client. We'll be using values and changed event listeners for efficiency purposes.
 			self:SetProperty("ClientDataReplicator", game:GetFrameworkModule():WaitForChild("ClientDataReplicator"))
+			self:SetProperty("ClientDataRemote", game:GetFrameworkModule():WaitForChild("ClientDataRemote"))
 
 			local function ClientDataProfile(Data)
 				Data:WaitForChild("InternalData", 5)
@@ -86,8 +93,8 @@ return {"PlayerDataService", "PlayerDataService", {
 				_self.Changed = LoadLibrary("RbxUtility"):CreateSignal()
 				_self.iChanged = LoadLibrary("RbxUtility"):CreateSignal()
 
-				local function setupVal(v, internal)
-					local oldv = game.FrameworkInternalService:Val2Var(v)
+				local function setupVal(v, val2var, internal)
+					local oldv = val2var
 					v.Changed:connect(function()
 						local val = game.FrameworkInternalService:Val2Var(v)
 						if val == oldv then return end
@@ -112,7 +119,7 @@ return {"PlayerDataService", "PlayerDataService", {
 				Data.InternalData.ChildAdded:connect(function(v)
 					local old = _self.idata[v.Name]
 					_self.idata[v.Name] = game.FrameworkInternalService:Val2Var(v)
-					setupVal(v, true)
+					setupVal(v, _self.idata[v.Name], true)
 
 					local f,ff = _self.idata[v.Name], old
 					if typeof(f) == "table" then
@@ -136,7 +143,7 @@ return {"PlayerDataService", "PlayerDataService", {
 				Data.PlayerData.ChildAdded:connect(function(v)
 					local old = _self.data[v.Name]
 					_self.data[v.Name] = game.FrameworkInternalService:Val2Var(v)
-					setupVal(v, true)
+					setupVal(v, _self.data[v.Name])
 
 					local f,ff = _self.data[v.Name], old
 					if typeof(f) == "table" then
@@ -159,12 +166,12 @@ return {"PlayerDataService", "PlayerDataService", {
 
 				for _,v in pairs(Data.InternalData:GetChildren()) do
 					_self.idata[v.Name] = game.FrameworkInternalService:Val2Var(v)
-					setupVal(v, true)
+					setupVal(v, _self.idata[v.Name], true)
 				end
 
 				for _,v in pairs(Data.PlayerData:GetChildren()) do
 					_self.data[v.Name] = game.FrameworkInternalService:Val2Var(v)
-					setupVal(v)
+					setupVal(v,  _self.data[v.Name])
 				end
 
 				if game.Players:GetPlayerByUserId(id) then
@@ -241,6 +248,21 @@ return {"PlayerDataService", "PlayerDataService", {
 				storage[Child.Name] = nil
 			end)
 
+			self.ClientDataRemote.OnClientEvent:connect(function(id, key, value, internal)
+				--print("Update via Remote: ",id,key,value,internal)
+				if storage[id] then
+					if internal then
+						local oldv = storage[id].idata[key]
+						storage[id].idata[key] = value
+						storage[id].iChanged:fire(key, value, oldv)
+					else
+						local oldv = storage[id].data[key]
+						storage[id].data[key] = value
+						storage[id].Changed:fire(key, value, oldv)
+					end
+				end
+			end)
+
 			for _,v in pairs(Children) do
 				ClientDataProfile(v)
 			end
@@ -277,7 +299,7 @@ return {"PlayerDataService", "PlayerDataService", {
 
 
 		local _self = {}
-
+		local CDR = self.ClientDataRemote
 		local function banCheck(data)
 			if data.internal['Banned'] and data.internal["BanLift"] and data.internal["BanLift"] > os.time() then
 				delay(1, function()
@@ -553,7 +575,19 @@ return {"PlayerDataService", "PlayerDataService", {
 			if old == Value and t ~= "table" and t ~= "Instance" then return end
 
 			if PlayerData:findFirstChild(Key) then
-				game.FrameworkInternalService:UpdateVal(PlayerData[Key], Value)
+				if Value == nil then
+					PlayerData[Key]:Destroy()
+				else
+					local t2 = typeof(PlayerData[Key].Value)
+					local is_s = PlayerData[Key]:FindFirstChild("Serialized")
+					if is_s or t2 ~= t then
+						CDR:FireAllClients(_self.userid .. "-" .. _self.profile, Key, Value)
+					else
+						if not pcall(function() PlayerData[Key].Value = Value end) then
+							CDR:FireAllClients(_self.userid .. "-" .. _self.profile, Key, Value)
+						end
+					end
+				end
 			else
 				local x = game.FrameworkInternalService:Var2Val(Value)
 				x.Name = Key
@@ -596,7 +630,19 @@ return {"PlayerDataService", "PlayerDataService", {
 
 			if Key ~= "KeyTimestamps" then
 				if InternalData:findFirstChild(Key) then
-					game.FrameworkInternalService:UpdateVal(InternalData[Key], Value)--
+					if Value == nil then
+						InternalData[Key]:Destroy()
+					else
+						local t2 = typeof(InternalData[Key].Value)
+						local is_s = InternalData[Key]:FindFirstChild("Serialized")
+						if is_s or t2 ~= t then
+							CDR:FireAllClients(_self.userid .. "-" .. _self.profile, Key, Value, true)
+						else
+							if not pcall(function() InternalData[Key].Value = Value end) then
+								CDR:FireAllClients(_self.userid .. "-" .. _self.profile, Key, Value, true)
+							end
+						end
+					end
 				else
 					local x = game.FrameworkInternalService:Var2Val(Value)
 					x.Name = Key
