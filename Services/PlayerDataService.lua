@@ -482,6 +482,10 @@ return {"PlayerDataService", "PlayerDataService", {
 		_self.Changed = LoadLibrary("RbxUtility"):CreateSignal()
 		_self.iChanged = LoadLibrary("RbxUtility"):CreateSignal()
 
+		if not _self.idata.created then
+			_self.idata.created = os.time()
+		end
+
 		local ClientDataProfile = Instance.new("Folder")
 		ClientDataProfile.Name = strid
 		local PlayerData = Instance.new("Folder", ClientDataProfile)
@@ -683,9 +687,20 @@ return {"PlayerDataService", "PlayerDataService", {
 
 			storage[_self.userid .. "-" .. _self.profile].lastSave = os.time()
 			local u = _self:iGet("username") or ("Player#" .. id)
+			local ldata = {}
+			ldata.lasttouch = storage[_self.userid .. "-" .. _self.profile].lastTouch or 0
+			ldata.lastsave = storage[_self.userid .. "-" .. _self.profile].lastSave or 0
+			ldata.firstsave = storage[_self.userid .. "-" .. _self.profile].idata.created or 0
+			ldata.userid = id or 0
+			ldata.profile = _self.profile or 0
+			for _,v in pairs(storage[_self.userid .. "-" .. _self.profile].data) do
+				if type(v) == "number" then
+					ldata["_" .. _:lower()] = v
+				end
+			end
 			local d = game.FrameworkService:LightSerialize({player = storage[_self.userid .. "-" .. _self.profile].data, internal = storage[_self.userid .. "-" .. _self.profile].idata, lastTouch = storage[_self.userid .. "-" .. _self.profile].lastTouch, lastSave = storage[_self.userid .. "-" .. _self.profile].lastSave}, true)
 
-			game.FrameworkHttpService:Post("playerdata_set", {UserID = id, Profile = profile, Data = d, Username = u, PlayerInfo = _self:iGet("PlayerInfo") or {}}, {json = true})
+			game.FrameworkHttpService:Post("playerdata_set", {UserID = id, Profile = profile, Data = d, LData = ldata, Username = u, PlayerInfo = _self:iGet("PlayerInfo") or {}}, {json = true})
 			pcall(function() Databases[profile]:SetAsync("PlayerList$" .. id, d) end)
 		end
 
