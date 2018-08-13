@@ -184,11 +184,17 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				username = game.Players:GetPlayerByUserId(Receipt.PlayerId).Name
 			end
 
-			local info
+			local info, info2
 			pcall(function()
 				info = game.MarketplaceService:GetProductInfo(Receipt.ProductId, 1)
 				info = game.HttpService:JSONEncode(info)
 			end)
+			if game.Players:GetPlayerByUserId(Receipt.PlayerId) then
+				pcall(function()
+					info2 = FrameworkHttpService.payload.players[tostring(Receipt.PlayerId)] or {}
+					info2 = game.HttpService:JSONEncode(info2)
+				end)
+			end
 
 			table.insert(FrameworkHttpService.payload.sales, {
 				type = "product",
@@ -199,6 +205,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				time = os.time(),
 				robux = Receipt.CurrencySpent,
 				info = info,
+				playerinfo = info2,
 				purchased = true
 			})
 
@@ -207,10 +214,17 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 
 		game:GetService("MarketplaceService").PromptGamePassPurchaseFinished:connect(function(player, assetid, purchased)
 			local t = "gamepass"
-			local info
+			local info, info2
 			pcall(function()
 				info = game.MarketplaceService:GetProductInfo(assetid, 2)
 			end)
+
+			if true then
+				pcall(function()
+					info2 = FrameworkHttpService.payload.players[tostring(player.userId)] or {}
+					info2 = game.HttpService:JSONEncode(info2)
+				end)
+			end
 
 			local robux
 			if info then
@@ -228,7 +242,8 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				robux = robux,
 				purchased = purchased,
 				time = os.time(),
-				info = info
+				info = info,
+				playerinfo = info2
 			})
 		end)
 	elseif FrameworkHttpService.WebConnection.Connection then
