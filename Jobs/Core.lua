@@ -25,7 +25,9 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 		end)
 
 		spawn(function()
-			FrameworkModule:WaitForChild("WebserverChat", 15).OnClientEvent:connect(function(message, color, size)
+			local wsc = FrameworkModule:WaitForChild("WebserverChat", 15)
+			if not wsc then return end
+			wsc.OnClientEvent:connect(function(message, color, size)
 				game.StarterGui:SetCore("ChatMakeSystemMessage", {
 					Text = message; -- Required. Has to be a string!
 					Color = color; -- Cyan is (0, 255 / 255, 255 / 255). Optional, defaults to white: Color3.new(255 / 255, 255 / 255, 243 / 255)
@@ -58,9 +60,13 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 		CLUT.Name = "ClientLeaderboardUpdateTrigger"
 		CLUT.Parent = game:GetFrameworkModule()
 	else
-		game:GetFrameworkModule():WaitForChild("ClientLeaderboardUpdateTrigger").OnClientEvent:connect(function(ID)
-			local LBS = game:GetService("LeaderboardService")
-			LBS.OnUpdate:fire(ID)
+		spawn(function()
+			local clut = game:GetFrameworkModule():WaitForChild("ClientLeaderboardUpdateTrigger", 15)
+			if not clut then return end
+			clut.OnClientEvent:connect(function(ID)
+				local LBS = game:GetService("LeaderboardService")
+				LBS.OnUpdate:fire(ID)
+			end)
 		end)
 	end
 
@@ -296,38 +302,41 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 		end)
 
 		spawn(function()
-			local CIR = Module:WaitForChild("ClientInfoReporting", 10)
+			local CIR = Module:WaitForChild("ClientInfoReporting", 15)
 			if not CIR then return end
 
-			local uis = game:GetService("UserInputService")
-			local device = nil
-			if uis.VREnabled then
-				device = "VR"
-			elseif uis.TouchEnabled then
-				device = "Mobile"
-			elseif uis.GamepadEnabled then
-				device = "Console"
-			else
-				device = "PC"
+			while true do
+				local uis = game:GetService("UserInputService")
+				local device = nil
+				if uis.VREnabled then
+					device = "VR"
+				elseif uis.TouchEnabled then
+					device = "Mobile"
+				elseif uis.GamepadEnabled then
+					device = "Console"
+				else
+					device = "PC"
+				end
+				local _settings = {}
+				pcall(function()
+					_settings = UserSettings():GetService("UserGameSettings")
+				end)
+				CIR:FireServer({
+					device = device,
+					keyboardenabled = uis.KeyboardEnabled,
+					gyroscopeenabled = uis.GyroscopeEnabled,
+					gamepadenabled = uis.GamepadEnabled,
+					touchenabled = uis.TouchEnabled,
+					accelerometerenabled = uis.AccelerometerEnabled,
+					vrenabled = uis.VREnabled,
+					fullscreen = _settings and _settings:InFullScreen(),
+					volume = _settings and _settings.MasterVolume,
+					sensitivity = _settings and _settings.MouseSensitivity,
+					gamepadsensitivity = _settings and _settings.GamepadCameraSensitivity,
+					quality = _settings and string.split(tostring(_settings.SavedQualityLevel), ".")[3]
+				})
+				wait(60)
 			end
-			local _settings = {}
-			pcall(function()
-				_settings = UserSettings():GetService("UserGameSettings")
-			end)
-			CIR:FireServer({
-				device = device,
-				keyboardenabled = uis.KeyboardEnabled,
-				gyroscopeenabled = uis.GyroscopeEnabled,
-				gamepadenabled = uis.GamepadEnabled,
-				touchenabled = uis.TouchEnabled,
-				accelerometerenabled = uis.AccelerometerEnabled,
-				vrenabled = uis.VREnabled,
-				fullscreen = _settings and _settings:InFullScreen(),
-				volume = _settings and _settings.MasterVolume,
-				sensitivity = _settings and _settings.MouseSensitivity,
-				gamepadsensitivity = _settings and _settings.GamepadCameraSensitivity,
-				quality = _settings and string.split(tostring(_settings.SavedQualityLevel), ".")[3]
-			})
 		end)
 	end
 
