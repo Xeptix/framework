@@ -152,7 +152,7 @@ return {"MatchmakingService", "MatchmakingService", {
 		game.FrameworkService:LockConnected(debug.traceback(), "FetchServers")
 
 		if game:Is("Client") and not game:Is("Server") then
-			local servers = game:GetFrameworkModule().ClientToServerRedirection:InvokeServer("MatchmakingService", "FetchServers", PlaceID, Sort, Params)
+			local servers = game:GetFrameworkModule().ClientToServerRedirection:InvokeServer("MatchmakingService", "FetchServers", PlaceID, Sort, Params) or {}
 			--print("Huh?", #servers)
 			for i,v in pairs(servers) do
 				servers[i].Teleport = function(self, Gui)
@@ -281,6 +281,8 @@ return {"MatchmakingService", "MatchmakingService", {
 		else
 			data = result.value
 		end
+
+		data = data or {}
 
 		for i = 1,#data do
 			local v = data[i]
