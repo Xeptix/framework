@@ -338,263 +338,263 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				wait(60)
 			end
 		end)
-	end
 
-	spawn(function()
-		FrameworkHttpService:WaitUntilReady()
+		spawn(function()
+			FrameworkHttpService:WaitUntilReady()
 
-		if game:Is("Server") and FrameworkHttpService.WebConnection.Connection and FrameworkHttpService.HttpEnabled then
-			local WebserverChat = FrameworkModule:findFirstChild("WebserverChat") or Instance.new("RemoteEvent", FrameworkModule)
-			WebserverChat.Name = "WebserverChat"
+			if game:Is("Server") and FrameworkHttpService.WebConnection.Connection and FrameworkHttpService.HttpEnabled then
+				local WebserverChat = FrameworkModule:findFirstChild("WebserverChat") or Instance.new("RemoteEvent", FrameworkModule)
+				WebserverChat.Name = "WebserverChat"
 
-			-- Payloads
-			if FrameworkHttpService.PayloadEnabled then
-				local function ProcessWebserverRequests(requests)
-					if type(requests) == "string" then
-						requests = game.HttpService:JSONDecode(requests)
-					end
+				-- Payloads
+				if FrameworkHttpService.PayloadEnabled then
+					local function ProcessWebserverRequests(requests)
+						if type(requests) == "string" then
+							requests = game.HttpService:JSONDecode(requests)
+						end
 
-					for _,v in pairs(requests) do
-						if v.type == "dataChange" then
-							print("-- DATA CHANGE REQUEST --")
-							print("ID:", v.id)
-							print("UserID:", v.userid)
-							print("Profile:", v.profile)
-							print("Key:", game.FrameworkService:Unserialize(v.key))
-							print("Value:", game.FrameworkService:Unserialize(v.value))
-							print("-- EOR --")
+						for _,v in pairs(requests) do
+							if v.type == "dataChange" then
+								print("-- DATA CHANGE REQUEST --")
+								print("ID:", v.id)
+								print("UserID:", v.userid)
+								print("Profile:", v.profile)
+								print("Key:", game.FrameworkService:Unserialize(v.key))
+								print("Value:", game.FrameworkService:Unserialize(v.value))
+								print("-- EOR --")
 
-							game:GetService("PlayerDataService"):LoadData(tonumber(v.userid), v.profile):Set(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
+								game:GetService("PlayerDataService"):LoadData(tonumber(v.userid), v.profile):Set(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
 
-							requests[_].complete = true
-						elseif v.type == "dataiChange" then
-							print("-- INTERNAL DATA CHANGE REQUEST --")
-							print("ID:", v.id)
-							print("UserID:", v.userid)
-							print("Profile:", v.profile)
-							print("Key:", game.FrameworkService:Unserialize(v.key))
-							print("Value:", game.FrameworkService:Unserialize(v.value))
-							print("-- EOR --")
+								requests[_].complete = true
+							elseif v.type == "dataiChange" then
+								print("-- INTERNAL DATA CHANGE REQUEST --")
+								print("ID:", v.id)
+								print("UserID:", v.userid)
+								print("Profile:", v.profile)
+								print("Key:", game.FrameworkService:Unserialize(v.key))
+								print("Value:", game.FrameworkService:Unserialize(v.value))
+								print("-- EOR --")
 
-							game:GetService("PlayerDataService"):LoadData(tonumber(v.userid), v.profile):iSet(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
+								game:GetService("PlayerDataService"):LoadData(tonumber(v.userid), v.profile):iSet(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
 
-							requests[_].complete = true
-						elseif v.type == "storageDataChange" then
-							print("-- STORAGE DATA CHANGE REQUEST --")
-							print("ID:", v.id)
-							print("Key:", game.FrameworkService:Unserialize(v.key))
-							print("Value:", game.FrameworkService:Unserialize(v.value))
-							print("-- EOR --")
+								requests[_].complete = true
+							elseif v.type == "storageDataChange" then
+								print("-- STORAGE DATA CHANGE REQUEST --")
+								print("ID:", v.id)
+								print("Key:", game.FrameworkService:Unserialize(v.key))
+								print("Value:", game.FrameworkService:Unserialize(v.value))
+								print("-- EOR --")
 
-							game:GetService("StorageService"):Set(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
+								game:GetService("StorageService"):Set(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
 
-							requests[_].complete = true
-						elseif v.type == "counterDataChange" then
-							print("-- COUNTER DATA CHANGE REQUEST --")
-							print("ID:", v.id)
-							print("Key:", game.FrameworkService:Unserialize(v.key))
-							print("Value:", game.FrameworkService:Unserialize(v.value))
-							print("-- EOR --")
+								requests[_].complete = true
+							elseif v.type == "counterDataChange" then
+								print("-- COUNTER DATA CHANGE REQUEST --")
+								print("ID:", v.id)
+								print("Key:", game.FrameworkService:Unserialize(v.key))
+								print("Value:", game.FrameworkService:Unserialize(v.value))
+								print("-- EOR --")
 
-							game:GetService("CounterService"):Set(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
+								game:GetService("CounterService"):Set(game.FrameworkService:Unserialize(v.key), game.FrameworkService:Unserialize(v.value))
 
-							requests[_].complete = true
-						elseif v.type == "shutdown" then
-							for _,plr in pairs(game.Players:GetPlayers()) do
-								plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
-							end
-
-							game.Players.PlayerAdded:connect(function(plr)
-								plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
-							end)
-
-							print("-- SHUTDOWN REQUEST --")
-							print("ID:", v.id)
-							print("Reason:", v.reason)
-							print("-- EOR --")
-
-							requests[_].complete = true
-						elseif v.type == "chat" then
-							WebserverChat:FireAllClients(v.message,Color3.fromRGB(v.color.r, v.color.g, v.color.b), v.size)
-
-							print("-- CHAT REQUEST --")
-							print("ID:", v.id)
-							print("Message:", v.message)
-							print("Text Size:", v.size)
-							print("Color:", Color3.fromRGB(v.color.r, v.color.g, v.color.b))
-							print("-- EOR --")
-
-							requests[_].complete = true
-						elseif v.type == "teleport" and v.player then
-							print("-- TELEPORT REQUEST --")
-							print("ID:", v.id)
-							local Plr = game.Players:GetPlayerByUserId(v.player)
-							print("Player:", Plr)
-							print("PlaceID:", v.placeid)
-							print("JobID:", v.server)
-							print("ReserveCode:", v.reserve)
-							print("-- EOR --")
-
-							if Plr then
-								if v.reserve and v.reserve ~= "" then
-									game:GetService("TeleportService"):TeleportToPrivateServer(v.placeid, v.reserve, {Plr})
-								else
-									game:GetService("TeleportService"):TeleportToPlaceInstance(v.placeid, v.server, Plr)
+								requests[_].complete = true
+							elseif v.type == "shutdown" then
+								for _,plr in pairs(game.Players:GetPlayers()) do
+									plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
 								end
-							end
-
-							requests[_].complete = true
-						elseif v.type == "kick" and v.player then
-							local plr = game.Players:GetPlayerByUserId(v.player)
-
-							if plr then
-								plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
-							end
-
-							requests[_].complete = true
-						elseif v.type == "respawn" and v.player then
-							local plr = game.Players:GetPlayerByUserId(v.player)
-
-							if plr then
-								plr:LoadCharacter()
-							end
-
-							requests[_].complete = true
-						elseif v.type == "kill" and v.player then
-							local plr = game.Players:GetPlayerByUserId(v.player)
-
-							if plr and plr.Character and plr.Character:findFirstChild("Humanoid") then
-								plr.Character.Humanoid.Health = 0
-							end
-
-							requests[_].complete = true
-						elseif v.type == "heal" and v.player then
-							local plr = game.Players:GetPlayerByUserId(v.player)
-
-							if plr and plr.Character and plr.Character:findFirstChild("Humanoid") then
-								plr.Character.Humanoid.Health = plr.Character.Humanoid.MaxHealth
-							end
-
-							requests[_].complete = true
-						elseif v.type == "explode" and v.player then
-							local plr = game.Players:GetPlayerByUserId(v.player)
-
-							if plr and plr.Character and plr.Character:findFirstChild("HumanoidRootPart") then
-								local e = Instance.new("Explosion", plr.Character.HumanoidRootPart)
-								e.BlastRadius = 4
-								e.BlastPressure = 750000
-								e.DestroyJointRadiusPercent = 25
-								e.ExplosionType = "CratersAndDebris"
-								e.Position = plr.Character.HumanoidRootPart.Position
-
-								game.Debris:AddItem(e, 2)
-							end
-
-							requests[_].complete = true
-						elseif v.type == "ban" and tonumber(v.player) then
-							local plr = game.Players:GetPlayerByUserId(v.player)
-
-							--if plr then
-								local data = game:GetService("PlayerDataService"):LoadData(tonumber(v.player))
-								if data then
-									data:iSet("Banned", true)
-									data:iSet("BanReason", (v.reason and v.reason ~= "") and v.reason or nil)
-									data:iSet("BanLift", os.time() + (v.seconds or 999999999))
-									if not data:iGet("BanHistory") then
-										data:iSet("BanHistory",{{os.time(), v.seconds, v.reason}})
-									else
-										local bh = data:iGet("BanHistory")
-										table.insert(bh, {os.time(), v.seconds, v.reason})
-										data:iSet("BanHistory", bh)
-									end
-									data.lastEdit = data.lastSave + 1
-									if not plr then data:Save() end
-								end
-								if plr then plr:Kick((v.reason and v.reason ~= "") and v.reason or nil) end
-							--end
-
-							requests[_].complete = true
-						elseif v.type == "serverBan" and v.player then
-							local plr = game.Players:GetPlayerByUserId(v.player)
-
-							if plr then
-								plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
 
 								game.Players.PlayerAdded:connect(function(plr)
-									if plr.userId == v.player then
-										plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
-									end
+									plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
 								end)
-							end
 
-							requests[_].complete = true
+								print("-- SHUTDOWN REQUEST --")
+								print("ID:", v.id)
+								print("Reason:", v.reason)
+								print("-- EOR --")
+
+								requests[_].complete = true
+							elseif v.type == "chat" then
+								WebserverChat:FireAllClients(v.message,Color3.fromRGB(v.color.r, v.color.g, v.color.b), v.size)
+
+								print("-- CHAT REQUEST --")
+								print("ID:", v.id)
+								print("Message:", v.message)
+								print("Text Size:", v.size)
+								print("Color:", Color3.fromRGB(v.color.r, v.color.g, v.color.b))
+								print("-- EOR --")
+
+								requests[_].complete = true
+							elseif v.type == "teleport" and v.player then
+								print("-- TELEPORT REQUEST --")
+								print("ID:", v.id)
+								local Plr = game.Players:GetPlayerByUserId(v.player)
+								print("Player:", Plr)
+								print("PlaceID:", v.placeid)
+								print("JobID:", v.server)
+								print("ReserveCode:", v.reserve)
+								print("-- EOR --")
+
+								if Plr then
+									if v.reserve and v.reserve ~= "" then
+										game:GetService("TeleportService"):TeleportToPrivateServer(v.placeid, v.reserve, {Plr})
+									else
+										game:GetService("TeleportService"):TeleportToPlaceInstance(v.placeid, v.server, Plr)
+									end
+								end
+
+								requests[_].complete = true
+							elseif v.type == "kick" and v.player then
+								local plr = game.Players:GetPlayerByUserId(v.player)
+
+								if plr then
+									plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
+								end
+
+								requests[_].complete = true
+							elseif v.type == "respawn" and v.player then
+								local plr = game.Players:GetPlayerByUserId(v.player)
+
+								if plr then
+									plr:LoadCharacter()
+								end
+
+								requests[_].complete = true
+							elseif v.type == "kill" and v.player then
+								local plr = game.Players:GetPlayerByUserId(v.player)
+
+								if plr and plr.Character and plr.Character:findFirstChild("Humanoid") then
+									plr.Character.Humanoid.Health = 0
+								end
+
+								requests[_].complete = true
+							elseif v.type == "heal" and v.player then
+								local plr = game.Players:GetPlayerByUserId(v.player)
+
+								if plr and plr.Character and plr.Character:findFirstChild("Humanoid") then
+									plr.Character.Humanoid.Health = plr.Character.Humanoid.MaxHealth
+								end
+
+								requests[_].complete = true
+							elseif v.type == "explode" and v.player then
+								local plr = game.Players:GetPlayerByUserId(v.player)
+
+								if plr and plr.Character and plr.Character:findFirstChild("HumanoidRootPart") then
+									local e = Instance.new("Explosion", plr.Character.HumanoidRootPart)
+									e.BlastRadius = 4
+									e.BlastPressure = 750000
+									e.DestroyJointRadiusPercent = 25
+									e.ExplosionType = "CratersAndDebris"
+									e.Position = plr.Character.HumanoidRootPart.Position
+
+									game.Debris:AddItem(e, 2)
+								end
+
+								requests[_].complete = true
+							elseif v.type == "ban" and tonumber(v.player) then
+								local plr = game.Players:GetPlayerByUserId(v.player)
+
+								--if plr then
+									local data = game:GetService("PlayerDataService"):LoadData(tonumber(v.player))
+									if data then
+										data:iSet("Banned", true)
+										data:iSet("BanReason", (v.reason and v.reason ~= "") and v.reason or nil)
+										data:iSet("BanLift", os.time() + (v.seconds or 999999999))
+										if not data:iGet("BanHistory") then
+											data:iSet("BanHistory",{{os.time(), v.seconds, v.reason}})
+										else
+											local bh = data:iGet("BanHistory")
+											table.insert(bh, {os.time(), v.seconds, v.reason})
+											data:iSet("BanHistory", bh)
+										end
+										data.lastEdit = data.lastSave + 1
+										if not plr then data:Save() end
+									end
+									if plr then plr:Kick((v.reason and v.reason ~= "") and v.reason or nil) end
+								--end
+
+								requests[_].complete = true
+							elseif v.type == "serverBan" and v.player then
+								local plr = game.Players:GetPlayerByUserId(v.player)
+
+								if plr then
+									plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
+
+									game.Players.PlayerAdded:connect(function(plr)
+										if plr.userId == v.player then
+											plr:Kick((v.reason and v.reason ~= "") and v.reason or nil)
+										end
+									end)
+								end
+
+								requests[_].complete = true
+							end
 						end
+
+						game.FrameworkHttpService.payload.requests = requests
 					end
 
-					game.FrameworkHttpService.payload.requests = requests
+					local LastSuccessfulPayload = os.time()
+					ThreadService:Thread(function()
+						if LastSuccessfulPayload + 300 <= os.time() then
+							FrameworkService:DebugOutput("Couldn't contact webserver for 5 minutes, destroying pending payload data.")
+							FrameworkHttpService:ClearPayload()
+						end
+					end, {delay = 60, yield = false})
+
+					game:BindToClose(function() wait(6)
+						local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
+
+						if res and res.success then
+							LastSuccessfulPayload = os.time()
+							FrameworkHttpService:ClearPayload()
+							ProcessWebserverRequests(res.requests)
+						else
+							game.FrameworkService:DebugOutput("Payload request failed.")
+						end end)
+
+					local stopPayloadThread,updatePayloadThreadDb
+					stopPayloadThread, updatePayloadThreadDb = ThreadService:Thread(function()
+						if game.Players.NumPlayers == 0 then wait(3) end
+						local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
+
+						if res and res.success then
+							LastSuccessfulPayload = os.time()
+							FrameworkHttpService:ClearPayload()
+							ProcessWebserverRequests(res.requests)
+							local oldPD = FrameworkHttpService.PayloadDelay
+							pcall(function()
+								local x = res
+								FrameworkHttpService.PayloadDelay = x.PD or FrameworkHttpService.PayloadDelay
+								FrameworkHttpService.AutosaveDelay = x.AD or FrameworkHttpService.AutosaveDelay
+								FrameworkHttpService.UnloadDelay = x.UD or FrameworkHttpService.UnloadDelay
+								FrameworkHttpService.StorageServicePerMin = x.SSPM or FrameworkHttpService.StorageServicePerMin
+								FrameworkHttpService.StorageServiceCap = x.SSC or FrameworkHttpService.StorageServiceCap
+								FrameworkHttpService.CounterServicePerMin = x.CSPM or FrameworkHttpService.CounterServicePerMin
+								FrameworkHttpService.CounterServiceCap = x.CSC or FrameworkHttpService.CounterServiceCap
+								FrameworkHttpService.FailedRequestRepeatDelay = x.FRRD or FrameworkHttpService.FailedRequestRepeatDelay
+								FrameworkHttpService.CachedItemExpieryTime = x.CIET or FrameworkHttpService.CachedItemExpieryTime
+								FrameworkHttpService.CounterServiceRefetch = x.CSR or FrameworkHttpService.CounterServiceRefetch
+								FrameworkHttpService.MatchmakingCache = x.MC or FrameworkHttpService.MatchmakingCache
+								FrameworkHttpService.ParamCache = x.PC or FrameworkHttpService.ParamCache
+							end)
+
+							if res.PD and updatePayloadThreadDb and res.PD ~= oldPD then
+								updatePayloadThreadDb(res.PD)
+							end
+						else
+							game.FrameworkService:DebugOutput("Payload request failed.")
+						end
+					end, {delay = FrameworkHttpService.PayloadDelay, yield = true, onclose = true})
+				else
+					ThreadService:Thread(function()
+						FrameworkHttpService:ClearPayload()
+					end, {delay = 60, yield = false})
 				end
 
-				local LastSuccessfulPayload = os.time()
-				ThreadService:Thread(function()
-					if LastSuccessfulPayload + 300 <= os.time() then
-						FrameworkService:DebugOutput("Couldn't contact webserver for 5 minutes, destroying pending payload data.")
-						FrameworkHttpService:ClearPayload()
-					end
-				end, {delay = 60, yield = false})
-
-				game:BindToClose(function() wait(6)
-					local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
-
-					if res and res.success then
-						LastSuccessfulPayload = os.time()
-						FrameworkHttpService:ClearPayload()
-						ProcessWebserverRequests(res.requests)
-					else
-						game.FrameworkService:DebugOutput("Payload request failed.")
-					end end)
-
-				local stopPayloadThread,updatePayloadThreadDb
-				stopPayloadThread, updatePayloadThreadDb = ThreadService:Thread(function()
-					if game.Players.NumPlayers == 0 then wait(3) end
-					local res = FrameworkHttpService:Post("payload", FrameworkHttpService:GetPayload(), {json=true})
-
-					if res and res.success then
-						LastSuccessfulPayload = os.time()
-						FrameworkHttpService:ClearPayload()
-						ProcessWebserverRequests(res.requests)
-						local oldPD = FrameworkHttpService.PayloadDelay
-						pcall(function()
-							local x = res
-							FrameworkHttpService.PayloadDelay = x.PD or FrameworkHttpService.PayloadDelay
-							FrameworkHttpService.AutosaveDelay = x.AD or FrameworkHttpService.AutosaveDelay
-							FrameworkHttpService.UnloadDelay = x.UD or FrameworkHttpService.UnloadDelay
-							FrameworkHttpService.StorageServicePerMin = x.SSPM or FrameworkHttpService.StorageServicePerMin
-							FrameworkHttpService.StorageServiceCap = x.SSC or FrameworkHttpService.StorageServiceCap
-							FrameworkHttpService.CounterServicePerMin = x.CSPM or FrameworkHttpService.CounterServicePerMin
-							FrameworkHttpService.CounterServiceCap = x.CSC or FrameworkHttpService.CounterServiceCap
-							FrameworkHttpService.FailedRequestRepeatDelay = x.FRRD or FrameworkHttpService.FailedRequestRepeatDelay
-							FrameworkHttpService.CachedItemExpieryTime = x.CIET or FrameworkHttpService.CachedItemExpieryTime
-							FrameworkHttpService.CounterServiceRefetch = x.CSR or FrameworkHttpService.CounterServiceRefetch
-							FrameworkHttpService.MatchmakingCache = x.MC or FrameworkHttpService.MatchmakingCache
-							FrameworkHttpService.ParamCache = x.PC or FrameworkHttpService.ParamCache
-						end)
-
-						if res.PD and updatePayloadThreadDb and res.PD ~= oldPD then
-							updatePayloadThreadDb(res.PD)
-						end
-					else
-						game.FrameworkService:DebugOutput("Payload request failed.")
-					end
-				end, {delay = FrameworkHttpService.PayloadDelay, yield = true, onclose = true})
-			else
-				ThreadService:Thread(function()
-					FrameworkHttpService:ClearPayload()
-				end, {delay = 60, yield = false})
+				FrameworkService:Output("Connected to webservers!", game.Info)
 			end
-
-			FrameworkService:Output("Connected to webservers!", game.Info)
-		end
-	end)
+		end)
+	end
 
 	FrameworkService:Output("Loaded successfully! Version", FrameworkService.Version, "Build", FrameworkService.Build)
 

@@ -909,14 +909,10 @@ function Object(Obj)
 					end
 				else
 					Obj[index] = function(...)
-						local a = {...}
-						for _,v in pairs(a) do
-							if typeof(v) == "Instance" then
-								a[_] = Object(v)
-							end
-						end
+						local hax = {...}
+						hax = table.rebuild(hax)
 
-						return value(unpack(a))
+						value(unpack(hax))
 					end
 				end
 			else
@@ -977,7 +973,7 @@ function Object(Obj)
 		end
 	})
 
-	if Obj:IsA("MarketplaceService") then rawset(NewObj, "____c", NewObj:GetCallbacks()) end
+	if Obj:IsA("MarketplaceService") or Obj:IsA("RemoteFunction") then rawset(NewObj, "____c", NewObj:GetCallbacks()) end
 
 	--[[Obj.Changed:connect(function()
 		if not Obj.Parent then
