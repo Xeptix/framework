@@ -154,6 +154,8 @@ return {"MatchmakingService", "MatchmakingService", {
 		if game:Is("Client") and not game:Is("Server") then
 			local servers = game:GetFrameworkModule().ClientToServerRedirection:InvokeServer("MatchmakingService", "FetchServers", PlaceID, Sort, Params) or {}
 			--print("Huh?", #servers)
+			if not servers then return {} end
+
 			for i,v in pairs(servers) do
 				servers[i].Teleport = function(self, Gui)
 					local pid, jid, rc = self.PlaceID, self.JobID, self.ReserveCode
