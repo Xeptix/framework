@@ -73,7 +73,7 @@ return {"PlayerDataService", "PlayerDataService", {
 
 				local strid = Data.Name
 				local split = string.split(strid, "-")
-				local id = tonumber(split[1])
+				local id = tonumber(split[1]) or 0
 				local profile = tonumber(split[2])
 				local _self = {}
 				_self.userid = id
@@ -287,6 +287,8 @@ return {"PlayerDataService", "PlayerDataService", {
 		elseif typeof(player) == "Instance" then
 			id = player.userId
 		end
+
+		if id < 0 then id = 0 end
 
 		local strid = id .. "-" .. profile
 		if locked[strid] then
