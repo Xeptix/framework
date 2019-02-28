@@ -12,7 +12,7 @@ return {"StorageService", "StorageService", {--
 		if game:Is("Server") then
 			pcall(function()
 				StorageDB = game:GetService("DataStoreService"):GetDataStore("XeptixFramework_Storage")
-				
+
 			end)
 
 			self:SetEvent("OnUpdate")
@@ -35,7 +35,7 @@ return {"StorageService", "StorageService", {--
 	end,
 	Get = function(self, Key, NoCache)
 		game.FrameworkService:LockServer(debug.traceback(), "Get")
-		game.FrameworkService:LockConnected(debug.traceback(), "Get")
+		--game.FrameworkService:LockConnected(debug.traceback(), "Get")
 
 		local Key = tostring(Key)
 		if storage[Key] and not NoCache then
@@ -46,9 +46,11 @@ return {"StorageService", "StorageService", {--
 		if Requests <= 0 then repeat wait() until Requests >= 1 end Requests = Requests - 1
 
 		local result
-		spawn(function() result = game.FrameworkHttpService:Post("storage_get", {Key = Key}, {json = true}) end)
-		local et = tick() + 5
-		while et > tick() and not result do wait() end
+		if game:Is("Connected") then
+			spawn(function() result = game.FrameworkHttpService:Post("storage_get", {Key = Key}, {json = true}) end)
+			local et = tick() + 5
+			while et > tick() and not result do wait() end
+		end
 
 		local data, data2, data2t
 		if StorageDB then
@@ -63,15 +65,17 @@ return {"StorageService", "StorageService", {--
 		end
 
 
-		if result and not result.success and result.error == 404 then
-			data = result
-		elseif (not result or not result.success) and not data2 then
-			game.FrameworkService:DebugOutput("StorageService get request failed, trying again in " .. game.FrameworkHttpService.FailedRequestRepeatDelay .. " second(s)")
-			wait(game.FrameworkHttpService.FailedRequestRepeatDelay)
+		if game:Is("Connected") then
+			if result and not result.success and result.error == 404 then
+				data = result
+			elseif (not result or not result.success) and not data2 then
+				game.FrameworkService:DebugOutput("StorageService get request failed, trying again in " .. game.FrameworkHttpService.FailedRequestRepeatDelay .. " second(s)")
+				wait(game.FrameworkHttpService.FailedRequestRepeatDelay)
 
-			return self:Get(Key, NoCache)
-		else
-			data = result.value
+				return self:Get(Key, NoCache)
+			elseif result then
+				data = result.value
+			end
 		end
 
 
@@ -89,10 +93,12 @@ return {"StorageService", "StorageService", {--
 			data = game.FrameworkService:LightUnserialize(data)
 		end
 
-		if data._____serialized then
-			data = game.FrameworkService:LightUnserialize(data)
-		elseif data.error then
-			data = nil
+		if data then
+			if data._____serialized then
+				data = game.FrameworkService:LightUnserialize(data)
+			elseif data.error then
+				data = nil
+			end
 		end
 
 		storage[Key] = {os.time(), data}
@@ -100,7 +106,7 @@ return {"StorageService", "StorageService", {--
 		if not storageCon[Key] and StorageDB then
 			storageCon[Key] = StorageDB:OnUpdate(Key, function(Value)
 				if storage[Key] and Value then
-					game.StorageService.OnUpdate:fire(Key, Value)
+					game.StorageService.OnUpdate:fire(Key, Value[1], storage[Key][1])
 					storage[Key][1] = Value[1]
 				elseif not storage[Key] then
 					storageCon[Key]:disconnect()
@@ -115,7 +121,7 @@ return {"StorageService", "StorageService", {--
 		if Requests <= 0 then repeat wait() until Requests >= 1 end Requests = Requests - 1
 
 		game.FrameworkService:LockServer(debug.traceback(), "Set")
-		game.FrameworkService:LockConnected(debug.traceback(), "Set")
+		--game.FrameworkService:LockConnected(debug.traceback(), "Set")
 
 		if storage[tostring(Key)] then
 			storage[tostring(Key)][1] = os.time()
@@ -127,9 +133,11 @@ return {"StorageService", "StorageService", {--
 		local oValue = Value
 		local Key, Value = tostring(Key), game.FrameworkService:LightSerialize(Value, true)
 		local result
-		spawn(function() result = game.FrameworkHttpService:Post("storage_set", {Key = Key, Value = Value}, {json = true}) end)
-		local et = tick() + 5
-		while et > tick() and not result do wait() end
+		if game:Is("Connected") then
+			spawn(function() result = game.FrameworkHttpService:Post("storage_set", {Key = Key, Value = Value}, {json = true}) end)
+			local et = tick() + 5
+			while et > tick() and not result do wait() end
+		end
 
 		if StorageDB and not noDB then
 			local s = true
@@ -142,11 +150,13 @@ return {"StorageService", "StorageService", {--
 			end
 		end
 
-		if not result or not result.success then
-			game.FrameworkService:DebugOutput("StorageService set request failed, trying again in " .. game.FrameworkHttpService.FailedRequestRepeatDelay .. " second(s)")
-			wait(game.FrameworkHttpService.FailedRequestRepeatDelay)
+		if game:Is("Connected") then
+			if not result or not result.success then
+				game.FrameworkService:DebugOutput("StorageService set request failed, trying again in " .. game.FrameworkHttpService.FailedRequestRepeatDelay .. " second(s)")
+				wait(game.FrameworkHttpService.FailedRequestRepeatDelay)
 
-			return self:Set(Key, oValue)
+				return self:Set(Key, oValue)
+			end
 		end
 
 		self.OnUpdate:fire(Key, oValue)
@@ -176,14 +186,16 @@ return {"StorageService", "StorageService", {--
 							StorageDB:UpdateAsync(v, function(Old)
 								local RawOld = Old or {}
 								local New = f(game.FrameworkService:LightUnserialize(RawOld[2]))
-								
+
 								DaNew = New
 
 								return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 							end)
-							
+
 							if DaNew then
 								self:Set(v, DaNew, true)
+							else
+								self:Set(v, f(self:Get(v, true)), true)
 							end
 						end)
 
@@ -203,12 +215,12 @@ return {"StorageService", "StorageService", {--
 							StorageDB:UpdateAsync(v, function(Old)
 								local RawOld = Old or {}
 								local New = f(game.FrameworkService:LightUnserialize(RawOld[2]))
-								
+
 								DaNew = New
 
 								return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 							end)
-							
+
 							if DaNew then
 								self:Set(v, DaNew, true)
 							end
@@ -231,12 +243,12 @@ return {"StorageService", "StorageService", {--
 						StorageDB:UpdateAsync(Keys, function(Old)
 							local RawOld = Old or {}
 							local New = f(game.FrameworkService:LightUnserialize(RawOld[2]))
-								
+
 							DaNew = New
 
 							return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 						end)
-							
+
 						if DaNew then
 							self:Set(Keys, DaNew, true)
 						end
@@ -256,12 +268,12 @@ return {"StorageService", "StorageService", {--
 						StorageDB:UpdateAsync(Keys, function(Old)
 							local RawOld = Old or {}
 							local New = f(game.FrameworkService:LightUnserialize(RawOld[2]))
-								
+
 							DaNew = New
 
 							return {os.time(), game.FrameworkService:LightSerialize(New, true)}
 						end)
-						
+
 						if DaNew then
 							self:Set(Keys, DaNew, true)
 						end

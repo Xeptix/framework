@@ -22,13 +22,14 @@ return {"ThreadService", "ThreadService", {
 					end
 					table.insert(Tasks, Task)
 				elseif not Task.stop then
+					--local Subtract = 0
 					local function requeue()
 						if DelayChanges[Task.id] then
 							Task.db = DelayChanges[Task.id]
 							DelayChanges[Task.id] = nil
 						end
 						if Task.db > 1/30 then
-							Task.next = t + Task.db
+							Task.next = t + Task.db-- - (Subtract % Task.db)
 							table.insert(Tasks, Task)
 						else
 							table.insert(Tasks, Task)
@@ -37,6 +38,7 @@ return {"ThreadService", "ThreadService", {
 
 					if Task.yield then
 						pcall(Task.task)
+						--Subtract = os.time() - t
 						requeue()
 					else
 						requeue()

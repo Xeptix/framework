@@ -24,7 +24,7 @@
 
 
 
-FrameworkModule = game:findFirstChild(".xeptixframework.", true).Parent
+FrameworkModule = script
 Original = {["tostring"] = tostring, ["require"] = require, ["print"] = print, ["Instance"] = Instance, ["typeof"] = typeof, ["type"] = type, ["game"] = game, ["Game"] = game, ["Workspace"] = workspace, ["workspace"] = workspace, ["math"] = math, ["table"] = table, ["string"] = string}
 FrameworkServices = {}
 FrameworkJobs = {}
@@ -43,7 +43,114 @@ superLockedProperties.CanReadProperty = true
 superLockedProperties.CanWriteProperty = true
 APIDump = require(FrameworkModule[".xeptixframework."].APIDump)
 RbxUtility = LoadLibrary("RbxUtility")
-ObjCache = setmetatable({}, {__mode = "v"})
+ObjCache, ObjCacheLV2 = {}, setmetatable({}, {__mode = "k"})
+CreateSignal = function()
+	local this = {}
+	this.Connections = {}
+	this.Waiting = {}
+	this._____RBXSCRIPTSIGNAL = true
+	--this.Fake = RbxUtility:CreateSignal()
+	local ID = 1
+
+	function this:connect(func)
+		if typeof(func) ~= "function" then game.FrameworkService:CheckArgument(debug.traceback(), "RBXScriptSignal", 1, func, "function") end
+
+		local control = {}
+		control.Callback = func
+		control.Connected = true
+
+		function control:disconnect()
+			control.Connected = false
+
+			local dcb = control.DisconnectCallback or control.disconnectCallback
+			if dcb then
+				spawn(dcb)
+			end
+		end
+
+		function control:Disconnect()
+			return control:disconnect()
+		end
+
+		table.insert(this.Connections, control)
+		return control
+	end
+
+	function this:Connect(...)
+		return this:connect(...)
+	end
+
+	function this:softdisconnect()
+		this.Connections = {}
+	end
+
+	function this:disconnect()
+		local dcb = this.DisconnectCallback or this.disconnectCallback
+		if dcb then
+			spawn(dcb)
+		end
+
+		for _,v in pairs(this.Connections) do
+			if v.Connected then
+				v:disconnect()
+			end
+		end
+
+		this.Connections = {}
+	end
+
+	function this:Disconnect()
+		return this:disconnect()
+	end
+
+	function this:wait(timeout)
+		local done = false
+		local args = {}
+		table.insert(this.Waiting, function(a)
+			args = a or args
+			done = true
+		end)
+
+		local start = tick()
+		while wait() do
+			if done or (timeout and start + timeout <= tick()) then
+				break
+			end
+		end
+
+		return unpack(args)
+	end
+
+	function this:Wait(timeout)
+		return this:wait(timeout)
+	end
+
+	function this:fire(...)
+		local args = {...}
+
+		for i,v in pairs(this.Connections) do
+			if v.Connected then
+				spawn(function()
+					v.Callback(unpack(args))
+				end)
+			end
+		end
+
+		while this.Waiting[1] do
+			local f = table.remove(this.Waiting, 1)
+			spawn(function()
+				f(args)
+			end)
+		end
+	end
+
+	function this:Fire(...)
+		return this:fire(...)
+	end
+
+	return this
+end
+
 ModifiedObjects = {
 	["root"] = {
 		IsA = function(self, ClassName)
@@ -269,6 +376,8 @@ ModifiedObjects = {
 			end
 		end,
 		SetProperty = function(self, property, value)
+			self:____cache(true)
+
 			if superLockedProperties[property] then
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Property '" .. property .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
@@ -287,7 +396,9 @@ ModifiedObjects = {
 			return rawset(self, property, value)
 		end,
 		SetMethod = function(self, name, func)
-			game.FrameworkService:CheckArgument("SetMethod", 2, func, "function")
+			game.FrameworkService:CheckArgument(debug.traceback(), "SetMethod", 2, func, "function")
+
+			self:____cache(true)
 
 			if superLockedProperties[name] then
 				local fn = self:GetFullName()
@@ -303,7 +414,9 @@ ModifiedObjects = {
 				return func(...)
 			end)
 		end,
-		SetEvent = function(self, name)
+		SetEvent = function(self, name, f)
+			self:____cache(true)
+
 			if superLockedProperties[name] then
 				local fn = self:GetFullName()
 				ferror(debug.traceback(), "Event '" .. name .. "' of game" .. ((fn ~= game.Name and fn ~= "") and "." .. fn or "") .. " is locked internally! Overwriting is not allowed!", 0)
@@ -314,7 +427,12 @@ ModifiedObjects = {
 				ferror(debug.traceback(), "Event '" .. name .. "' of " .. ((fn ~= Original.game.Name) and "game." .. fn or "DataModel") .. " is locked! Writing is not allowed!", 0)
 			end
 
-			rawset(self, name, RbxUtility:CreateSignal())
+			rawset(self, name, CreateSignal())
+
+			if f and typeof(f) == "function" then
+				return rawget(self, name):connect(f)
+			end
+
 			return rawget(self, name)
 		end,
 		LockProperty = function(self, name, lockMode)
@@ -439,6 +557,45 @@ ModifiedObjects = {
 
 			return Callbacks
 		end,
+		Destroy = function(self)
+			self:____cache()
+			for _,v in pairs(self:GetDescendants()) do
+				v:____cache()
+
+				if ObjCacheLV2[rawget(v, "____o")] then
+					ObjCacheLV2[rawget(v, "____o")] = nil
+				end
+
+				for __, vv in pairs(rawget(v, "____e")) do
+					vv:disconnect()
+				end
+			end
+
+			if ObjCacheLV2[rawget(self, "____o")] then
+				ObjCacheLV2[rawget(self, "____o")] = nil
+			end
+
+			for __, vv in pairs(rawget(self, "____e")) do
+				vv:disconnect()
+			end
+
+			rawget(self, "____o"):Destroy()
+		end,
+		ClearAllChildren = function(self)
+			for _,v in pairs(self:GetDescendants()) do
+				v:____cache()
+
+				if ObjCacheLV2[rawget(v, "____o")] then
+					ObjCacheLV2[rawget(v, "____o")] = nil
+				end
+
+				for __, vv in pairs(rawget(v, "____e")) do
+					vv:disconnect()
+				end
+			end
+
+			rawget(self, "____o"):ClearAllChildren()
+		end,
 		IsXeptixFrameworkObject = function(self)
 			return true
 		end,
@@ -447,6 +604,9 @@ ModifiedObjects = {
 		____l = {}
 	},
 	["DataModel"] = {
+		GetCache = function(self)
+			return ObjCache
+		end,
 		GetService = function(self, ServiceName)
 			if FrameworkServices[ServiceName] then
 				return FrameworkServices[ServiceName]
@@ -497,7 +657,7 @@ ModifiedObjects = {
 			return false
 		end,
 		CreateSignal = function(self)
-			return RbxUtility:CreateSignal()
+			return CreateSignal()
 		end,
 		GetDevice = function(self)
 			local device = "Server"
@@ -507,7 +667,7 @@ ModifiedObjects = {
 					device = "VR"
 				elseif uis.TouchEnabled and not uis.KeyboardEnabled then
 					device = "Mobile"
-				elseif uis.GamepadEnabled then
+				elseif uis.GamepadEnabled and not uis.KeyboardEnabled then
 					device = "Console"
 				else
 					device = "PC"
@@ -703,8 +863,14 @@ StructureBase = {
 }
 
 function Object(Obj)
+	if Obj == nil then return end
+
 	if ObjCache[Obj] then
 		return ObjCache[Obj]
+	end
+
+	if ObjCacheLV2[Obj] then
+		return ObjCacheLV2[Obj]
 	end
 
 	if Original.typeof(Obj) == "table" and Obj.XeptixFrameworkObject then
@@ -712,6 +878,8 @@ function Object(Obj)
 	end
 
 	local Modified = {}
+	local ForceCache
+
 	for _,v in pairs(ModifiedObjects.root) do
 		Modified[_] = v
 	end
@@ -720,6 +888,10 @@ function Object(Obj)
 		for _,v in pairs(StructureBase[Obj.ClassName]) do
 			if ModifiedObjects[v] then
 				for __, vv in pairs(ModifiedObjects[v]) do
+					if typeof(vv) ~= "function" then
+						ForceCache = true
+					end
+
 					Modified[__] = vv
 				end
 			end
@@ -728,21 +900,37 @@ function Object(Obj)
 
 	if ModifiedObjects[Obj.ClassName] then
 		for _,v in pairs(ModifiedObjects[Obj.ClassName]) do
+			if typeof(v) ~= "function" then
+				ForceCache = true
+			end
+
 			Modified[_] = v
 		end
 	end
 
 
+	local NewObj
 	Modified.____o = Obj
 	Modified.XeptixFrameworkObject = true
 	Modified.____l = {}
 	Modified.____e = {}
 	Modified.____c = {}
+	Modified.____cache = function(self, enable)
+		if enable then
+			if ObjCache[Obj] then return end
 
-	local NewObj
+			ObjCache[Obj] = NewObj
+		else
+			ObjCache[Obj] = nil
+		end
+	end
+
 	local checkedEvents = false
 	NewObj = setmetatable(Modified, {
 		__index = function(self, index)
+			self = ObjCache[Obj] or self
+			if index == nil then index = "" end
+
 			local l_ = rawget(self, "____l")
 			if l_[index .. "____l1"] or l_[index .. "____l3"] and index ~= "GetFullName" then
 				local fn = self:GetFullName()
@@ -758,7 +946,7 @@ function Object(Obj)
 				local o = Obj
 				local value
 
-				local ch = o:FindFirstChild(index)
+				local ch = o:FindFirstChild(tostring(index))
 				if ch then
 					return Object(ch)
 				end
@@ -803,69 +991,24 @@ function Object(Obj)
 						value = Object(value)
 					elseif vt == "RBXScriptSignal" then
 						local ____e = rawget(self, "____e")
-						if not ____e[index] and not checkedEvents then
-							checkedEvents = true
-							for _,v in pairs(NewObj:GetEvents()) do -- hacky event stuff yay!!!
+						if not ____e[index] then
+							ObjCacheLV2[Obj] = nil
+							ObjCache[Obj] = NewObj
+							--for _,v in pairs(NewObj:GetEvents()) do -- hacky event stuff yay!!!
 								pcall(function()
-									local rbx = Obj[_]
-									if typeof(rbx) == "RBXScriptSignal" then
-										--local signal = RbxUtility:CreateSignal()
-										--local c = signal.connect;
-										local signal = {}
-										local first
-										local hah = setmetatable({}, {__mode="k"})
-										function signal:connect(f)
-											local rc = rbx:connect(function(...)
-												local hax = {...}
-												hax = table.rebuild(hax)
+									local Fake = CreateSignal()
+									local Con = value:connect(function(...)
+										Fake:fire(unpack(table.rebuild({...})))
+									end)
 
-												f(unpack(hax))
-											end)
-
-											hah[f] = rc
-
-											return rc
-										end
-										function signal:Connect(f)
-											return signal:connect(f)
-										end
-										function signal:wait(f)
-											return rbx:wait(f)
-										end
-										function signal:Wait(f)
-											return signal:wait(f)
-										end
-										function signal:Fire(...)
-											return signal:fire(...)
-										end
-										function signal:Disconnect()
-											return signal:disconnect()
-										end
-										function signal:fire(...)
-											for _,v in pairs(hah) do
-												if _ and v and v.Connected then
-													_(...)
-												else
-													hah[_] = nil
-												end
-											end
-										end
-										function signal:disconnect()
-											for _,v in pairs(hah) do
-												if _ and v and v.Connected then
-													v:disconnect()
-												else
-													hah[_] = nil
-												end
-											end
-										end
-										function signal:softdisconnect()
-											hah = {}
-										end
-										rawget(NewObj, "____e")[_] = signal
+									Fake.DisconnectCallback = function()
+										Con:disconnect()
 									end
+
+									rawget(NewObj, "____e")[index] = Fake
+									____e[index] = Fake
 								end)
-							end
+							--end
 						end
 						value = ____e[index] or value
 					end
@@ -880,6 +1023,9 @@ function Object(Obj)
 			ferror(debug.traceback(), "Attempt to call " .. self.ClassName)
 		end,
 		__newindex = function(self, index, value)
+			self = ObjCache[Obj] or self
+			if index == nil then index = "" end
+
 			local c_ = rawget(self, "____c")
 			if c_[index] then
 				if Obj:IsA("MarketplaceService") and index:lower() == "processreceipt" then
@@ -912,7 +1058,13 @@ function Object(Obj)
 						local hax = {...}
 						hax = table.rebuild(hax)
 
-						value(unpack(hax))
+						return unpack(table.rebuild({value(unpack(hax))}, function(v, valtype)
+							if valtype == "table" and v.____o then
+								return v.____o
+							else
+								return v
+							end
+						end))
 					end
 				end
 			else
@@ -937,10 +1089,18 @@ function Object(Obj)
 			return Modified.____o
 		end,
 		__concat = function(self, value)
-			return self.Name .. value
+			if Original.typeof(value) == "table" and value.XeptixFrameworkObject then
+				value = value.____o.Name
+			end
+			return Obj.Name .. value
 		end,
 		__len = function(self)
 			return #rawget(self, "____o"):GetChildren()
+		end,
+		__eq = function(self, a)
+			local x = typeof(a) == "Instance" and a:IsA("XeptixObject")
+			print("x",x)
+			return x and (rawget(self, "____o") == rawget(a, "____o")) or (rawget(self, "____o") == a)
 		end,
 		-- All of the below metamethods will throw errors.
 		-- Notice: this is not a framework issue, you can not perform mathematics on instances broski.
@@ -962,9 +1122,6 @@ function Object(Obj)
 		__pow = function(self, value)
 			return rawget(self, "____o") ^ value
 		end,
-		__eq = function(self, value)
-			return rawget(self, "____o") == value
-		end,
 		__lt = function(self, value)
 			return rawget(self, "____o") < value
 		end,
@@ -973,7 +1130,7 @@ function Object(Obj)
 		end
 	})
 
-	if Obj:IsA("MarketplaceService") or Obj:IsA("RemoteFunction") then rawset(NewObj, "____c", NewObj:GetCallbacks()) end
+	if Obj:IsA("MarketplaceService") or Obj:IsA("RemoteFunction") then ObjCache[Obj] = NewObj rawset(NewObj, "____c", NewObj:GetCallbacks()) end
 
 	--[[Obj.Changed:connect(function()
 		if not Obj.Parent then
@@ -990,14 +1147,19 @@ function Object(Obj)
 
 	--end
 
-	ObjCache[Obj] = NewObj
+	if ForceCache then
+		ObjCache[Obj] = NewObj
+	else
+		ObjCacheLV2[Obj] = NewObj
+	end
+
 	return NewObj
 end
 
 function CreateService(Name, Class, Service, Hidden)
 	local S
 	pcall(function() S = Object(Original.game:GetService(Name)) end)
-	S = S or Object(Instance.new(Hidden == true and "Snap" or "Motor"))
+	S = S or Object(Original.game:FindFirstChild(Name)) or Object(Instance.new(Hidden == true and "Snap" or "Motor"))
 	S.Parent = game
 	S.Archivable = false
 	FrameworkServices[Name] = S
@@ -1017,6 +1179,7 @@ function CreateService(Name, Class, Service, Hidden)
 	--
 	S:LockProperty("_isService", 2)
 	S:LockProperty("ClassName", 2)
+	S:LockProperty("Parent", 2)
 	S:LockProperty("SuperClassName", 2)
 	S:LockProperty("XeptixFrameworkService", 2)
 	S:LockProperty("Name", 2)
@@ -1279,6 +1442,11 @@ string = NewMeta(Original.string, {
 	   end
 	   return result
 	end,
+	trim = function(str)
+		game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, str, "string")
+
+		return str:gsub("^%s*(.-)%s*$", "%1")
+	end,
 	time = function(Time, Limit, ShortLimit) -- todo: rewrite, from 2015 framework lol
 	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 1, Time, "number")
 	   game.FrameworkService:CheckArgument(debug.traceback(), nil, 2, Limit, {"number", "nil"})
@@ -1523,6 +1691,8 @@ math = NewMeta(Original.math, {
 typeof = function(x)
 	if Original.typeof(x) == "table" and x.XeptixFrameworkObject then
 		return "Instance"
+	elseif Original.typeof(x) == "table" and x._____RBXSCRIPTSIGNAL then
+		return "RBXScriptSignal"
 	else
 		return Original.typeof(x)
 	end
@@ -1619,7 +1789,7 @@ end
 
 
 -- Initalize the framework's core
-FrameworkService = game:StartJob("Core")
+game:StartJob("Core")
 
 
 

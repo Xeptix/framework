@@ -72,7 +72,7 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 
 
 	if FrameworkHttpService.WebConnection.Connection and game:Is("Server") then -- Payload Stuff!
-		game.Players.PlayerAdded:connect(function(Player)
+		local function PPA(Player)
 			local VID = FrameworkInternalService.VisitId + 1
 			FrameworkInternalService.VisitId = VID
 			FrameworkHttpService.payload.players[tostring(Player.userId)] = {
@@ -89,7 +89,13 @@ return function(a, b, c, d, e, f, g, h, i, j, k, l)
 				username = Player.Name,
 				joined = os.time()
 			})
-		end)
+		end
+		local PP = game.Players:GetPlayers()
+		game.Players.PlayerAdded:connect(PPA)
+
+		for _,v in pairs(PP) do
+			PPA(v)
+		end
 
 		game.Players.PlayerRemoving:connect(function(Player)
 			if not FrameworkHttpService.payload.players[tostring(Player.userId)] then wait(1) end
